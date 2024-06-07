@@ -1,0 +1,1 @@
+cf login -a https://api.cf.us10.hana.ondemand.com -o 'aicomp-aic-poc' -s poc
