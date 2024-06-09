@@ -1,5 +1,5 @@
 {
-    "name": "Aicomp mono-repo",
+    "name": "Multi-Tenant Package PoC",
     "build": {
         "dockerfile": "Dockerfile",
         "args": {
