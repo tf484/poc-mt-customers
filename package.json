@@ -9,18 +9,30 @@
     "@sap/cds": "^7",
     "express": "^4",
     "@sap/cds-hana": "^2",
-    "@sap/xssec": "^3"
+    "@sap/xssec": "^4"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^1",
     "@sap/cds-dk": "^7",
     "@sap/eslint-plugin-cds": "^3",
     "@sap/ux-specification": "^1.120.11",
-    "eslint": "^9"
+    "eslint": "^9",
+    "npm-run-all": "^4",
+    "rimraf": "^5"
   },
   "scripts": {
     "start": "cds-serve",
-    "watch-customers": "cds watch --open customers/webapp/index.html?sap-ui-xx-viewCache=false"
+    "watch-customers": "cds watch --open customers/webapp/index.html?sap-ui-xx-viewCache=false",
+    "aic-poc-login": "../scripts/cf-aic-poc-login.sh",
+    "aic-dev-login": "../scripts/cf-aic-dev-login.sh",
+    "aic-test-login": "../scripts/cf-aic-test-login.sh",
+    "cds-build": "cds build --production",
+    "mbt-build": "mbt build -t gen --mtar mta.tar",
+    "deploy": "cf deploy gen/mta.tar --retries 1",
+    "undeploy": "cf undeploy poc-mt-pkg --delete-services --delete-service-keys --delete-service-brokers",
+    "build-deploy-to-poc": "run-s aic-poc-login cds-build mbt-build deploy",
+    "build-deploy-to-dev": "run-s aic-dev-login cds-build mbt-build deploy",
+    "build-deploy-to-test": "run-s aic-test-login cds-build mbt-build deploy"
   },
   "sapux": [
     "app/customers"

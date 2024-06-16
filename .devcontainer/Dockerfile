@@ -22,6 +22,8 @@ RUN npm install -g mbt
 RUN npm install -g mta
 RUN npm install -g @sap/generator-fiori
 RUN npm install -g @ui5/cli
+RUN npm install -g node@18.20.3
+
 
 
 # vi mode everywhere and nicer prompt 
