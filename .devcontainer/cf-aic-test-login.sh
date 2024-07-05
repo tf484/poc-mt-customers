@@ -1,1 +1,1 @@
-cf login -a https://api.cf.us10.hana.ondemand.com -o 'aic-test' -s test
+cf login -a https://api.cf.eu10-004.hana.ondemand.com -o 'aic-test' -s test

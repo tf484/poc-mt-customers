@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG VARIANT="18"
+ARG VARIANT="20"
 ARG CAPVER="latest"
 FROM mcr.microsoft.com/vscode/devcontainers/javascript-node:0-${VARIANT}
 
@@ -22,9 +22,10 @@ RUN npm install -g mbt
 RUN npm install -g mta
 RUN npm install -g @sap/generator-fiori
 RUN npm install -g @ui5/cli
-RUN npm install -g node@18.20.3
+RUN npm install -g node@20.9.0
 
-
+# install azure cli
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
 # vi mode everywhere and nicer prompt 
 RUN cat <<EOBASHRC >> ${USER_HOME}/.bashrc
