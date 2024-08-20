@@ -1,4 +1,4 @@
-# CAP poc-mt-pkg
+# CAP poc-mt-customers
 _out
 *.db
 *.sqlite
@@ -8,8 +8,6 @@ default-*.json
 gen/
 node_modules/
 target/
-resources/
-dist/
 
 # Web IDE, App Studio
 .che/

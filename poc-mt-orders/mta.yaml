@@ -1,0 +1,143 @@
+_schema-version: 3.3.0
+ID: poc-mt-orders
+version: 1.0.0
+description: Aicomp MT POC Orders
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+modules:
+  - name: poc-mt-orders-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+      readiness-health-check-type: http
+      readiness-health-check-http-endpoint: /health
+    build-parameters:
+      builder: npm
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: poc-mt-orders-destination
+      - name: poc-mt-orders-db
+      - name: poc-mt-orders-auth
+
+  - name: poc-mt-orders-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: poc-mt-orders-db
+
+  - name: poc-mt-orders-app-content
+    type: com.sap.application.content
+    path: .
+    requires:
+      - name: poc-mt-orders-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - artifacts:
+            - pocmtorders.zip
+          name: pocmtorders
+          target-path: resources/
+  
+  - name: pocmtorders
+    type: html5
+    path: app/orders
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm install
+        - npm run build:cf
+      supported-platforms:
+        []
+
+  - name: poc-mt-orders
+    type: approuter.nodejs
+    path: app/router
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api # must be used in xs-app.json as well
+          url: ~{srv-url}
+          forwardAuthToken: true
+      - name: poc-mt-orders-auth
+      - name: poc-mt-orders-html5-runtime
+      - name: poc-mt-orders-destination
+
+resources:
+
+  - name: poc-mt-orders-destination
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: srv-api
+    parameters:
+      config:
+        HTML5Runtime_enabled: true
+        init_data:
+          instance:
+            destinations:
+              - Authentication: NoAuthentication
+                Name: ui5
+                ProxyType: Internet
+                Type: HTTP
+                URL: https://ui5.sap.com
+              - Authentication: NoAuthentication
+                HTML5.DynamicDestination: true
+                HTML5.ForwardAuthToken: true
+                Name: mtpocorders-api
+                ProxyType: Internet
+                Type: HTTP
+                URL: ~{srv-api/srv-url}
+            existing_destinations_policy: update
+        version: 1.0.0
+      service: destination
+      service-plan: lite
+
+  - name: poc-mt-orders-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+
+  - name: poc-mt-orders-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: poc-mt-orders-${org}-${space}
+        tenant-mode: dedicated
+
+  - name: poc-mt-orders-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-name: poc-mt-orders-html5-srv
+      service-plan: app-host
+
+  - name: poc-mt-orders-html5-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service-name: poc-mt-orders-html5-runtime
+      service-plan: app-runtime
+      service: html5-apps-repo

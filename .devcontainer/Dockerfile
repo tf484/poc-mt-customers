@@ -22,6 +22,7 @@ RUN npm install -g mbt
 RUN npm install -g mta
 RUN npm install -g @sap/generator-fiori
 RUN npm install -g @ui5/cli
+RUN npm install -g eslint
 RUN npm install -g node@20.9.0
 
 # install azure cli

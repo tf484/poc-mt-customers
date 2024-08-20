@@ -1,0 +1,58 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core"
+  xmlns:u="sap.ui.unified"
+  xmlns="sap.m">
+  <Dialog id="createContextDialog" title="{= ${viewData>/createMode} === true ? ${i18n>createContext} : ${i18n>updateContext} }" class="sapUiResponsiveContentPadding" beforeOpen=".onBeforeOpen" afterClose=".onAfterClose">
+    <content>
+      <Panel id="generalPanel" width="auto" class="sapUiResponsiveMargin">
+        <content>
+          <VBox id="generalVBox">
+            <Label id="contextIDLabel" text="{i18n>contextID}" labelFor="contextIDInput" visible="{= ${viewData>/createMode} === false}" />
+            <Input id="contextIDInput" width="18rem" class="sapUiSmallMarginBottom" value="{viewData>/contextID}" enabled="false" visible="{= ${viewData>/createMode} === false}"/>
+            <Label id="compositeKeyLabel" text="{i18n>compositeKey}" labelFor="compositeKeyInput" visible="{= ${viewData>/createMode} === false}" />
+            <Input id="compositeKeyInput" class="sapUiSmallMarginBottom" value="{viewData>/compositeKey}" enabled="false" visible="{= ${viewData>/createMode} === false}"/>
+            <Label id="externalNameLabel" text="{i18n>externalName}" labelFor="compositeKeyInput" visible="{= ${viewData>/createMode} === false}" />
+            <Input id="externalNameInput" class="sapUiSmallMarginBottom" value="{viewData>/externalName}" enabled="false" visible="{= ${viewData>/createMode} === false}"/>
+            <Label id="contextCategoryLabel" text="{i18n>contextCategory}" labelFor="contextCategorySelect" visible="{= ${viewData>/createMode} === false}" />
+            <Select id="contextCategorySelect" class="sapUiSmallMarginBottom" forceSelection="false" visible="{= ${viewData>/createMode} === false}" enabled="false" selectedKey="{viewData>/contextCategorySelected}" items="{ path: '/ContextCategories', sorter: { path: 'name' } }">
+              <core:Item id="contextCategorySelectItem" key="{code}" text="{name}" />
+            </Select>
+            <Label id="contextTypeLabel" text="{i18n>contextType}" labelFor="contextTypeSelect"/>
+            <Select id="contextTypeSelect" class="sapUiSmallMarginBottom" forceSelection="false" enabled="{viewData>/createMode}" change=".onContextTypeChange" selectedKey="{viewData>/contextTypeSelected}" items="{ path: '/ContextTypes', sorter: { path: 'name' } }">
+              <core:Item id="contextTypeSelectItem" key="{code}" text="{name}" />
+            </Select>
+            <Label id="contextDescriptionLabel" text="{i18n>description}" labelFor="contextDescriptionInput" />
+            <Input id="contexteDescriptionInput" value="{viewData>/contextDescription}" maxLength="60" />
+          </VBox>
+        </content>
+      </Panel>
+      <Panel id="keysPanel" width="auto" class="sapUiResponsiveMargin">
+        <headerToolbar>
+          <OverflowToolbar id="keysOverflowToolbar">
+            <Title id="keysTitle" text="{i18n>keys}"/>
+          </OverflowToolbar>
+        </headerToolbar>
+        <content>
+        </content>
+
+      </Panel>
+      <Panel id="attributesPanel" width="auto" class="sapUiResponsiveMargin">
+        <headerToolbar>
+          <OverflowToolbar id="attributesOverflowToolbar">
+            <Title id="attributesTitle" text="{i18n>attributes}"/>
+          </OverflowToolbar>
+        </headerToolbar>
+        <content>
+
+        </content>
+
+      </Panel>
+    </content>
+    <beginButton>
+      <Button id="confirmContext" text="{= ${viewData>/createMode} === true ? ${i18n>create} : ${i18n>update} }" press=".onConfirmContext" type="Emphasized" />
+    </beginButton>
+    <endButton>
+      <Button id="cancelCreateContext" text="{i18n>cancel}" press=".onCancel" />
+    </endButton>
+
+  </Dialog>
+</core:FragmentDefinition>

@@ -1,0 +1,8 @@
+2 ids added to catalog.json: [
+  "services[0].id <- 9c2b213c-bddf-446c-aff8-eef4043813c9",
+  "services[0].plans[0].id <- 31c33cef-39a4-4c44-9e6e-8ba998d357cc"
+]
+Plaintext password:
+WkMbYQwByFAYiIyerU9YSGVN6GWlaRWe
+Hashed credentials:
+sha256:kLzMRdElwtclla1Ut5A9CuCxiaYYFa2ME7tT7txjyw8=:wR/pHdYAQO+3PQ9k7RDWEy8kg0ktlND7MIM2QzzJ0RE=

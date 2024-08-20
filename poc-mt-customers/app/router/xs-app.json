@@ -1,0 +1,22 @@
+{
+  "welcomeFile": "pocmtcustomers/index.html",
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/app/(.*)$",
+      "target": "/app/$1",
+      "localDir": ".",
+      "cacheControl": "no-cache, no-store, must-revalidate"
+    },
+    {
+      "source": "^/user-api(.*)",
+      "target": "$1",
+      "service": "sap-approuter-userapi"
+    },
+    {
+      "source": "^/appconfig/",
+      "localDir": ".",
+      "cacheControl": "no-cache, no-store, must-revalidate"
+    }
+  ]
+}

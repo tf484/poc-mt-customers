@@ -1,0 +1,17 @@
+{
+  "welcomeFile": "orders/index.html",
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/app/(.*)$",
+      "target": "$1",
+      "localDir": ".",
+      "cacheControl": "no-cache, no-store, must-revalidate"
+    },
+    {
+      "source": "^/appconfig/",
+      "localDir": ".",
+      "cacheControl": "no-cache, no-store, must-revalidate"
+    }
+  ]
+}

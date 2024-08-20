@@ -1,15 +1,13 @@
-# CAP poc-mt-pkg
+# CAP context
 _out
 *.db
-*.sqlite
 connection.properties
 default-*.json
-.cdsrc-private.json
 gen/
 node_modules/
 target/
-resources/
-dist/
+.nyc_output/
+coverage/
 
 # Web IDE, App Studio
 .che/
@@ -31,6 +29,3 @@ mta_archives/
 # IDEs
 # .vscode
 # .idea
-
-# @cap-js/cds-typer
-@cds-models

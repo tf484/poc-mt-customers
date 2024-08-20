@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Capabilities.V1.xml">
+    <edmx:Include Alias="Capabilities" Namespace="Org.OData.Capabilities.V1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Alias="Common" Namespace="com.sap.vocabularies.Common.v1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+    <edmx:Include Alias="Core" Namespace="Org.OData.Core.V1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
+    <edmx:Include Alias="UI" Namespace="com.sap.vocabularies.UI.v1"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema Namespace="ContextService" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <EntityContainer Name="EntityContainer">
+        <EntitySet Name="Contexts" EntityType="ContextService.Contexts">
+          <NavigationPropertyBinding Path="contextType" Target="ContextTypes"/>
+          <NavigationPropertyBinding Path="contextCategory" Target="ContextCategories"/>
+          <NavigationPropertyBinding Path="keys" Target="Contexts_keys"/>
+          <NavigationPropertyBinding Path="attributes" Target="Contexts_attributes"/>
+          <NavigationPropertyBinding Path="texts" Target="Contexts_texts"/>
+          <NavigationPropertyBinding Path="localized" Target="Contexts_texts"/>
+        </EntitySet>
+        <EntitySet Name="ContextTypes" EntityType="ContextService.ContextTypes">
+          <NavigationPropertyBinding Path="texts" Target="ContextTypes_texts"/>
+          <NavigationPropertyBinding Path="localized" Target="ContextTypes_texts"/>
+        </EntitySet>
+        <EntitySet Name="ContextCategories" EntityType="ContextService.ContextCategories">
+          <NavigationPropertyBinding Path="texts" Target="ContextCategories_texts"/>
+          <NavigationPropertyBinding Path="localized" Target="ContextCategories_texts"/>
+        </EntitySet>
+        <EntitySet Name="Contexts_keys" EntityType="ContextService.Contexts_keys">
+          <NavigationPropertyBinding Path="up_" Target="Contexts"/>
+        </EntitySet>
+        <EntitySet Name="Contexts_attributes" EntityType="ContextService.Contexts_attributes">
+          <NavigationPropertyBinding Path="up_" Target="Contexts"/>
+        </EntitySet>
+        <EntitySet Name="Contexts_texts" EntityType="ContextService.Contexts_texts"/>
+        <EntitySet Name="ContextTypes_texts" EntityType="ContextService.ContextTypes_texts"/>
+        <EntitySet Name="ContextCategories_texts" EntityType="ContextService.ContextCategories_texts"/>
+        <FunctionImport Name="findContext" Function="ContextService.findContext"/>
+        <FunctionImport Name="getContextTypeDetails" Function="ContextService.getContextTypeDetails"/>
+        <ActionImport Name="createContext" Action="ContextService.createContext"/>
+        <ActionImport Name="toggleStatus" Action="ContextService.toggleStatus"/>
+        <ActionImport Name="updateContext" Action="ContextService.updateContext"/>
+      </EntityContainer>
+      <EntityType Name="Contexts">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="createdAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="createdBy" Type="Edm.String" MaxLength="255"/>
+        <Property Name="modifiedAt" Type="Edm.DateTimeOffset" Precision="7"/>
+        <Property Name="modifiedBy" Type="Edm.String" MaxLength="255"/>
+        <NavigationProperty Name="contextType" Type="ContextService.ContextTypes">
+          <ReferentialConstraint Property="contextType_code" ReferencedProperty="code"/>
+        </NavigationProperty>
+        <Property Name="contextType_code" Type="Edm.String" MaxLength="30"/>
+        <NavigationProperty Name="contextCategory" Type="ContextService.ContextCategories">
+          <ReferentialConstraint Property="contextCategory_code" ReferencedProperty="code"/>
+        </NavigationProperty>
+        <Property Name="contextCategory_code" Type="Edm.String" MaxLength="30"/>
+        <Property Name="compositeKey" Type="Edm.String" MaxLength="255"/>
+        <Property Name="externalName" Type="Edm.String" MaxLength="80"/>
+        <Property Name="description" Type="Edm.String" MaxLength="60"/>
+        <Property Name="inactive" Type="Edm.Boolean" DefaultValue="false"/>
+        <NavigationProperty Name="keys" Type="Collection(ContextService.Contexts_keys)" Partner="up_">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="attributes" Type="Collection(ContextService.Contexts_attributes)" Partner="up_">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="texts" Type="Collection(ContextService.Contexts_texts)">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="localized" Type="ContextService.Contexts_texts">
+          <ReferentialConstraint Property="ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="ContextTypes">
+        <Key>
+          <PropertyRef Name="code"/>
+        </Key>
+        <Property Name="name" Type="Edm.String" MaxLength="255"/>
+        <Property Name="descr" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="code" Type="Edm.String" MaxLength="30" Nullable="false"/>
+        <NavigationProperty Name="texts" Type="Collection(ContextService.ContextTypes_texts)">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="localized" Type="ContextService.ContextTypes_texts">
+          <ReferentialConstraint Property="code" ReferencedProperty="code"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="ContextCategories">
+        <Key>
+          <PropertyRef Name="code"/>
+        </Key>
+        <Property Name="name" Type="Edm.String" MaxLength="255"/>
+        <Property Name="descr" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="code" Type="Edm.String" MaxLength="30" Nullable="false"/>
+        <NavigationProperty Name="texts" Type="Collection(ContextService.ContextCategories_texts)">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="localized" Type="ContextService.ContextCategories_texts">
+          <ReferentialConstraint Property="code" ReferencedProperty="code"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="Contexts_keys">
+        <Key>
+          <PropertyRef Name="up__ID"/>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <NavigationProperty Name="up_" Type="ContextService.Contexts" Nullable="false" Partner="keys">
+          <ReferentialConstraint Property="up__ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <Property Name="up__ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="keyName" Type="Edm.String" MaxLength="20"/>
+        <Property Name="keyValue" Type="Edm.String" MaxLength="255"/>
+      </EntityType>
+      <EntityType Name="Contexts_attributes">
+        <Key>
+          <PropertyRef Name="up__ID"/>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <NavigationProperty Name="up_" Type="ContextService.Contexts" Nullable="false" Partner="attributes">
+          <ReferentialConstraint Property="up__ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <Property Name="up__ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="attributeName" Type="Edm.String" MaxLength="20"/>
+        <Property Name="attributeValue" Type="Edm.String" MaxLength="255"/>
+      </EntityType>
+      <EntityType Name="Contexts_texts">
+        <Key>
+          <PropertyRef Name="locale"/>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="locale" Type="Edm.String" MaxLength="14" Nullable="false"/>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="description" Type="Edm.String" MaxLength="60"/>
+      </EntityType>
+      <EntityType Name="ContextTypes_texts">
+        <Key>
+          <PropertyRef Name="locale"/>
+          <PropertyRef Name="code"/>
+        </Key>
+        <Property Name="locale" Type="Edm.String" MaxLength="14" Nullable="false"/>
+        <Property Name="name" Type="Edm.String" MaxLength="255"/>
+        <Property Name="descr" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="code" Type="Edm.String" MaxLength="30" Nullable="false"/>
+      </EntityType>
+      <EntityType Name="ContextCategories_texts">
+        <Key>
+          <PropertyRef Name="locale"/>
+          <PropertyRef Name="code"/>
+        </Key>
+        <Property Name="locale" Type="Edm.String" MaxLength="14" Nullable="false"/>
+        <Property Name="name" Type="Edm.String" MaxLength="255"/>
+        <Property Name="descr" Type="Edm.String" MaxLength="1000"/>
+        <Property Name="code" Type="Edm.String" MaxLength="30" Nullable="false"/>
+      </EntityType>
+      <ComplexType Name="return_ContextService_getContextTypeDetails">
+        <Property Name="keys" Type="Collection(Edm.String)" MaxLength="20" Nullable="false"/>
+        <Property Name="attributes" Type="Collection(Edm.String)" MaxLength="20" Nullable="false"/>
+      </ComplexType>
+      <ComplexType Name="return_ContextService_createContext">
+        <Property Name="contextID" Type="Edm.Guid"/>
+        <Property Name="compositeKey" Type="Edm.String" MaxLength="255"/>
+      </ComplexType>
+      <ComplexType Name="param_ContextService_createContext_descriptions">
+        <Property Name="locale" Type="Edm.String" MaxLength="14"/>
+        <Property Name="description" Type="Edm.String" MaxLength="60"/>
+      </ComplexType>
+      <ComplexType Name="param_ContextService_createContext_keys">
+        <Property Name="keyName" Type="Edm.String" MaxLength="20"/>
+        <Property Name="keyValue" Type="Edm.String" MaxLength="255"/>
+      </ComplexType>
+      <ComplexType Name="param_ContextService_createContext_attributes">
+        <Property Name="attributeName" Type="Edm.String" MaxLength="20"/>
+        <Property Name="attributeValue" Type="Edm.String" MaxLength="255"/>
+      </ComplexType>
+      <ComplexType Name="return_ContextService_toggleStatus">
+        <Property Name="inactive" Type="Edm.Boolean"/>
+      </ComplexType>
+      <ComplexType Name="param_ContextService_updateContext_descriptions">
+        <Property Name="locale" Type="Edm.String" MaxLength="14"/>
+        <Property Name="description" Type="Edm.String" MaxLength="60"/>
+      </ComplexType>
+      <ComplexType Name="param_ContextService_updateContext_attributes">
+        <Property Name="attributeName" Type="Edm.String" MaxLength="20"/>
+        <Property Name="attributeValue" Type="Edm.String" MaxLength="255"/>
+      </ComplexType>
+      <Function Name="findContext" IsBound="false" IsComposable="false">
+        <Parameter Name="contextType" Type="Edm.String" MaxLength="30"/>
+        <Parameter Name="keyString" Type="Edm.String"/>
+        <ReturnType Type="Edm.Guid"/>
+      </Function>
+      <Function Name="getContextTypeDetails" IsBound="false" IsComposable="false">
+        <Parameter Name="contextType" Type="Edm.String" MaxLength="30"/>
+        <ReturnType Type="ContextService.return_ContextService_getContextTypeDetails"/>
+      </Function>
+      <Action Name="createContext" IsBound="false">
+        <Parameter Name="contextType" Type="Edm.String" MaxLength="30"/>
+        <Parameter Name="descriptions" Type="Collection(ContextService.param_ContextService_createContext_descriptions)" Nullable="false"/>
+        <Parameter Name="keys" Type="Collection(ContextService.param_ContextService_createContext_keys)" Nullable="false"/>
+        <Parameter Name="attributes" Type="Collection(ContextService.param_ContextService_createContext_attributes)" Nullable="false"/>
+        <ReturnType Type="ContextService.return_ContextService_createContext"/>
+      </Action>
+      <Action Name="toggleStatus" IsBound="false">
+        <Parameter Name="contextID" Type="Edm.Guid"/>
+        <ReturnType Type="ContextService.return_ContextService_toggleStatus"/>
+      </Action>
+      <Action Name="updateContext" IsBound="false">
+        <Parameter Name="contextID" Type="Edm.Guid"/>
+        <Parameter Name="descriptions" Type="Collection(ContextService.param_ContextService_updateContext_descriptions)" Nullable="false"/>
+        <Parameter Name="attributes" Type="Collection(ContextService.param_ContextService_updateContext_attributes)" Nullable="false"/>
+      </Action>
+      <Annotations Target="ContextService.EntityContainer/Contexts">
+        <Annotation Term="Capabilities.DeleteRestrictions">
+          <Record Type="Capabilities.DeleteRestrictionsType">
+            <PropertyValue Property="Deletable" Bool="false"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="Capabilities.InsertRestrictions">
+          <Record Type="Capabilities.InsertRestrictionsType">
+            <PropertyValue Property="Insertable" Bool="false"/>
+          </Record>
+        </Annotation>
+        <Annotation Term="Capabilities.UpdateRestrictions">
+          <Record Type="Capabilities.UpdateRestrictionsType">
+            <PropertyValue Property="Updatable" Bool="false"/>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/createdAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedAt}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/createdBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="Core.Immutable" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>CreatedBy}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/modifiedAt">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedAt}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/modifiedBy">
+        <Annotation Term="UI.HiddenFilter" Bool="true"/>
+        <Annotation Term="Core.Computed" Bool="true"/>
+        <Annotation Term="Core.Description" String="{i18n>UserID.Description}"/>
+        <Annotation Term="Common.Label" String="{i18n>ChangedBy}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/contextType">
+        <Annotation Term="Common.Label" String="{i18n>ContextType}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/contextType_code">
+        <Annotation Term="Common.Label" String="{i18n>ContextType}"/>
+        <Annotation Term="Common.ValueList">
+          <Record Type="Common.ValueListType">
+            <PropertyValue Property="Label" String="{i18n>ContextType}"/>
+            <PropertyValue Property="CollectionPath" String="ContextTypes"/>
+            <PropertyValue Property="Parameters">
+              <Collection>
+                <Record Type="Common.ValueListParameterInOut">
+                  <PropertyValue Property="LocalDataProperty" PropertyPath="contextType_code"/>
+                  <PropertyValue Property="ValueListProperty" String="code"/>
+                </Record>
+                <Record Type="Common.ValueListParameterDisplayOnly">
+                  <PropertyValue Property="ValueListProperty" String="name"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/contextCategory">
+        <Annotation Term="Common.Label" String="{i18n>ContextCategory}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/contextCategory_code">
+        <Annotation Term="Common.Label" String="{i18n>ContextCategory}"/>
+        <Annotation Term="Common.ValueList">
+          <Record Type="Common.ValueListType">
+            <PropertyValue Property="Label" String="{i18n>ContextCategory}"/>
+            <PropertyValue Property="CollectionPath" String="ContextCategories"/>
+            <PropertyValue Property="Parameters">
+              <Collection>
+                <Record Type="Common.ValueListParameterInOut">
+                  <PropertyValue Property="LocalDataProperty" PropertyPath="contextCategory_code"/>
+                  <PropertyValue Property="ValueListProperty" String="code"/>
+                </Record>
+                <Record Type="Common.ValueListParameterDisplayOnly">
+                  <PropertyValue Property="ValueListProperty" String="name"/>
+                </Record>
+              </Collection>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/compositeKey">
+        <Annotation Term="Common.Label" String="{i18n>CompositeKey}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/externalName">
+        <Annotation Term="Common.Label" String="{i18n>ExternalName}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts/description">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="ContextService.findContext(Edm.String,Edm.String)/contextType">
+        <Annotation Term="Common.Label" String="{i18n>ContextType}"/>
+      </Annotations>
+      <Annotations Target="ContextService.findContext(Edm.String,Edm.String)/$ReturnType">
+        <Annotation Term="Common.Label" String="{i18n>ContextID}"/>
+      </Annotations>
+      <Annotations Target="ContextService.getContextTypeDetails(Edm.String)/contextType">
+        <Annotation Term="Common.Label" String="{i18n>ContextType}"/>
+      </Annotations>
+      <Annotations Target="ContextService.createContext()/contextType">
+        <Annotation Term="Common.Label" String="{i18n>ContextType}"/>
+      </Annotations>
+      <Annotations Target="ContextService.toggleStatus()/contextID">
+        <Annotation Term="Common.Label" String="{i18n>ContextID}"/>
+      </Annotations>
+      <Annotations Target="ContextService.updateContext()/contextID">
+        <Annotation Term="Common.Label" String="{i18n>ContextID}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextTypes">
+        <Annotation Term="UI.Identification">
+          <Collection>
+            <Record Type="UI.DataField">
+              <PropertyValue Property="Value" Path="name"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="ContextService.ContextTypes/name">
+        <Annotation Term="Common.Label" String="{i18n>Name}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextTypes/descr">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextTypes/code">
+        <Annotation Term="Common.Text" Path="name"/>
+        <Annotation Term="Common.Label" String="{i18n>ContextType}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextCategories">
+        <Annotation Term="UI.Identification">
+          <Collection>
+            <Record Type="UI.DataField">
+              <PropertyValue Property="Value" Path="name"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="ContextService.ContextCategories/name">
+        <Annotation Term="Common.Label" String="{i18n>Name}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextCategories/descr">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextCategories/code">
+        <Annotation Term="Common.Text" Path="name"/>
+        <Annotation Term="Common.Label" String="{i18n>ContextCategory}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts_keys/keyName">
+        <Annotation Term="Common.Label" String="{i18n>KeyName}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts_keys/keyValue">
+        <Annotation Term="Common.Label" String="{i18n>KeyValue}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts_attributes/attributeName">
+        <Annotation Term="Common.Label" String="{i18n>AttributeName}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts_attributes/attributeValue">
+        <Annotation Term="Common.Label" String="{i18n>AttributeValue}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts_texts/locale">
+        <Annotation Term="Common.Label" String="{i18n>LanguageCode}"/>
+      </Annotations>
+      <Annotations Target="ContextService.Contexts_texts/description">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextTypes_texts/locale">
+        <Annotation Term="Common.Label" String="{i18n>LanguageCode}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextTypes_texts/name">
+        <Annotation Term="Common.Label" String="{i18n>Name}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextTypes_texts/descr">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextTypes_texts/code">
+        <Annotation Term="Common.Text" Path="name"/>
+        <Annotation Term="Common.Label" String="{i18n>ContextType}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextCategories_texts/locale">
+        <Annotation Term="Common.Label" String="{i18n>LanguageCode}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextCategories_texts/name">
+        <Annotation Term="Common.Label" String="{i18n>Name}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextCategories_texts/descr">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="ContextService.ContextCategories_texts/code">
+        <Annotation Term="Common.Text" Path="name"/>
+        <Annotation Term="Common.Label" String="{i18n>ContextCategory}"/>
+      </Annotations>
+      <Annotations Target="ContextService.return_ContextService_createContext/contextID">
+        <Annotation Term="Common.Label" String="{i18n>ContextID}"/>
+      </Annotations>
+      <Annotations Target="ContextService.return_ContextService_createContext/compositeKey">
+        <Annotation Term="Common.Label" String="{i18n>CompositeKey}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_createContext_descriptions/locale">
+        <Annotation Term="Common.Label" String="{i18n>Locale}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_createContext_descriptions/description">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_createContext_keys/keyName">
+        <Annotation Term="Common.Label" String="{i18n>KeyName}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_createContext_keys/keyValue">
+        <Annotation Term="Common.Label" String="{i18n>KeyValue}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_createContext_attributes/attributeName">
+        <Annotation Term="Common.Label" String="{i18n>AttributeName}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_createContext_attributes/attributeValue">
+        <Annotation Term="Common.Label" String="{i18n>AttributeValue}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_updateContext_descriptions/locale">
+        <Annotation Term="Common.Label" String="{i18n>Locale}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_updateContext_descriptions/description">
+        <Annotation Term="Common.Label" String="{i18n>Description}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_updateContext_attributes/attributeName">
+        <Annotation Term="Common.Label" String="{i18n>AttributeName}"/>
+      </Annotations>
+      <Annotations Target="ContextService.param_ContextService_updateContext_attributes/attributeValue">
+        <Annotation Term="Common.Label" String="{i18n>AttributeValue}"/>
+      </Annotations>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

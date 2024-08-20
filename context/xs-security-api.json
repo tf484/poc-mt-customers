@@ -1,0 +1,19 @@
+{
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.admin-api",
+      "description": "admin-api"
+    }
+  ],
+  "attributes": [],
+  "role-templates": [
+    {
+      "name": "admin-api",
+      "description": "Aicomp Context API Administrator Role",
+      "scope-references": [
+        "$XSAPPNAME.admin-api"
+      ],
+      "attribute-references": []
+    }
+  ]
+}
