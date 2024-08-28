@@ -1,0 +1,17 @@
+{
+  "services": [
+    {
+      "name": "poc-mt-orders-api",
+      "description": "Aicomp MT POC Orders API",
+      "bindable": true,
+      "plans": [
+        {
+          "name": "default",
+          "description": "Default Plan",
+          "id": "ccfa4c7f-07f6-4a57-a4dc-ce5b9a022d54"
+        }
+      ],
+      "id": "413fada1-f6f1-4336-8fa9-c823383db648"
+    }
+  ]
+}

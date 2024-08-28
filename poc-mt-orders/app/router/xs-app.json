@@ -1,17 +1,11 @@
 {
-  "welcomeFile": "orders/index.html",
-  "authenticationMethod": "route",
+  "welcomeFile": "orders/",
   "routes": [
     {
-      "source": "^/app/(.*)$",
+      "source": "^(.*)$",
       "target": "$1",
-      "localDir": ".",
-      "cacheControl": "no-cache, no-store, must-revalidate"
-    },
-    {
-      "source": "^/appconfig/",
-      "localDir": ".",
-      "cacheControl": "no-cache, no-store, must-revalidate"
+      "service": "html5-apps-repo-rt",
+      "authenticationType": "xsuaa"
     }
   ]
 }

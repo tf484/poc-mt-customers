@@ -20,23 +20,50 @@ modules:
       readiness-health-check-type: http
       readiness-health-check-http-endpoint: /health
     build-parameters:
-      builder: npm
+      builder: npm-ci
     provides:
       - name: srv-api # required by consumers of CAP services (e.g. approuter)
         properties:
           srv-url: ${default-url}
     requires:
       - name: poc-mt-orders-destination
-      - name: poc-mt-orders-db
+      - name: poc-mt-orders-connectivity
       - name: poc-mt-orders-auth
-
-  - name: poc-mt-orders-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    requires:
+      - name: poc-mt-orders-logging
       - name: poc-mt-orders-db
+
+  - name: poc-mt-orders-app-destination-content
+    type: com.sap.application.content
+    requires:
+    - name: poc-mt-orders-destination
+      parameters:
+        content-target: true
+    - name: poc-mt-orders-repo-host
+      parameters:
+        service-key:
+          name: poc-mt-orders-repo-host-key
+    - name: poc-mt-orders-auth
+      parameters:
+        service-key:
+          name: poc-mt-orders-auth-key
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+      content:
+        instance:
+          destinations:
+          - Name: poc-mt-orders_poc-mt-orders-repo-host
+            ServiceInstanceName: poc-mt-orders-html5-srv
+            ServiceKeyName: poc-mt-orders-repo-host-key
+            sap.cloud.service: poc-mt-orders
+          - Authentication: OAuth2UserTokenExchange
+            Name: poc-mt-orders_poc-mt-orders-auth
+            ServiceInstanceName: poc-mt-orders-xsuaa
+            ServiceKeyName: poc-mt-orders-auth-key
+            sap.cloud.service: poc-mt-orders
+          existing_destinations_policy: ignore
+    build-parameters:
+      no-source: true
 
   - name: poc-mt-orders-app-content
     type: com.sap.application.content
@@ -52,7 +79,7 @@ modules:
             - pocmtorders.zip
           name: pocmtorders
           target-path: resources/
-  
+
   - name: pocmtorders
     type: html5
     path: app/orders
@@ -80,8 +107,84 @@ modules:
           url: ~{srv-url}
           forwardAuthToken: true
       - name: poc-mt-orders-auth
+      - name: poc-mt-orders-logging
       - name: poc-mt-orders-html5-runtime
       - name: poc-mt-orders-destination
+      - name: poc-mt-orders-connectivity
+      - name: mtx-api
+        group: destinations
+        properties:
+          name: mtx-api # must be used in xs-app.json as well
+          url: ~{mtx-url}
+    properties:
+      TENANT_HOST_PATTERN: '^(.*)-${default-uri}'
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
+          cf-app-name: ${app-name}
+
+  - name: poc-mt-orders-mtx
+    type: nodejs
+    path: gen/mtx/sidecar
+    build-parameters:
+      builder: npm-ci
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+    provides:
+      - name: mtx-api
+        properties:
+          mtx-url: ${default-url}
+    requires:
+      - name: poc-mt-orders-auth
+      - name: poc-mt-orders-logging
+      - name: poc-mt-orders-registry
+      - name: aic-credential-store
+      - name: poc-mt-orders-cis-central
+      - name: app-api
+        properties:
+          SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
+          saasAppName: ${org}-${space}-~{cf-app-name}
+          cfAppName: ~{cf-app-name}
+      - name: poc-mt-orders-destination
+      - name: poc-mt-orders-connectivity
+      - name: poc-mt-orders-db
+    properties:
+      tenantSeparator: '-'
+
+  - name: poc-mt-orders-sb
+    type: nodejs
+    path: broker
+    parameters:
+      disk-quota: 1024M
+      memory: 128M
+      health-check-timeout: 180
+    requires:
+      - name: poc-mt-orders-auth
+      - name: poc-mt-orders-logging
+      - name: srv-api
+    build-parameters:
+      builder: npm-ci
+    properties:
+      SBF_ENABLE_AUDITLOG: false
+      SBF_CATALOG_SUFFIX: ${space} # Make the service broker unique in the deployed space
+      SBF_BROKER_CREDENTIALS_HASH:  >
+        {
+          "broker-user": "sha256:xE6yQ6HTH/w+Y8NsxvaJMSG+DtcZj92Br0AQR1dUkKM=:6UX3/v+6ki073ZiQhas2yniwm6gimfBKsphGMCpLUNg="
+        }
+      SBF_SERVICE_CONFIG:
+        poc-mt-orders-api:
+          extend_xssecurity:
+            per_plan:
+              default:
+                authorities:
+                - $XSMASTERAPPNAME.plan_default
+          extend_credentials:
+            shared:
+              endpoints:
+                poc-mt-orders-api: '~{srv-api/srv-url}' # Tenant-specific OData endpoint for remote integrations      
 
 resources:
 
@@ -91,6 +194,7 @@ resources:
       - name: srv-api
     parameters:
       config:
+        xsappname: poc-mt-orders-destination
         HTML5Runtime_enabled: true
         init_data:
           instance:
@@ -112,21 +216,39 @@ resources:
       service: destination
       service-plan: lite
 
-  - name: poc-mt-orders-db
-    type: com.sap.xs.hdi-container
+  - name: poc-mt-orders-connectivity
+    type: org.cloudfoundry.managed-service
     parameters:
-      service: hana
-      service-plan: hdi-shared
+      config:
+        xsappname: poc-mt-orders-connectivity
+      service: connectivity
+      service-plan: lite
 
   - name: poc-mt-orders-auth
     type: org.cloudfoundry.managed-service
     parameters:
       service: xsuaa
-      service-plan: application
+      service-name: poc-mt-orders-xsuaa
+      service-plan: broker
       path: ./xs-security.json
       config:
         xsappname: poc-mt-orders-${org}-${space}
-        tenant-mode: dedicated
+        tenant-mode: shared
+
+  - name: poc-mt-orders-cis-central
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: poc-mt-orders-auth
+    parameters:
+      service: cis
+      service-plan: central
+
+  - name: poc-mt-orders-logging
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: application-logs
+      service-name: poc-mt-orders-${space}
+      service-plan: lite
 
   - name: poc-mt-orders-repo-host
     type: org.cloudfoundry.managed-service
@@ -141,3 +263,34 @@ resources:
       service-name: poc-mt-orders-html5-runtime
       service-plan: app-runtime
       service: html5-apps-repo
+
+  - name: poc-mt-orders-registry
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: mtx-api
+      - name: app-api
+    parameters:
+      service: saas-registry
+      service-plan: application
+      config:
+        xsappname: poc-mt-orders-${org}-${space}
+        appName: poc-mt-orders-${org}-${space}
+        displayName: Aicomp Orders
+        description: Aicomp MT POC Orders
+        category: 'Applications / Multi-Customer Partner Solutions'
+        appUrls:
+          getDependencies: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/dependencies
+          onSubscription: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/tenant/{tenantId}
+          onSubscriptionAsync: true
+          onUnSubscriptionAsync: true
+          onUpdateDependenciesAsync: true
+          callbackTimeoutMillis: 300000 # Increase if your deployments are taking longer than that
+
+  - name: poc-mt-orders-db
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: service-manager
+      service-plan: container
+
+  - name: aic-credential-store
+    type: org.cloudfoundry.existing-service
