@@ -1,5 +1,8 @@
 {
   // uncomment entries once all libraries have been installed via 'npm install'
+  "prettier.printWidth": 160,
+  "prettier.semi": false,
+  "js/ts.implicitProjectConfig.checkJs": true,
   "eslint.validate": [
     // "cds",
     // "csn",

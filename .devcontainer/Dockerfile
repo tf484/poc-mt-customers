@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG VARIANT="20"
+ARG VARIANT="18"
 ARG CAPVER="latest"
 FROM mcr.microsoft.com/vscode/devcontainers/javascript-node:0-${VARIANT}
 
@@ -23,7 +23,7 @@ RUN npm install -g mta
 RUN npm install -g @sap/generator-fiori
 RUN npm install -g @ui5/cli
 RUN npm install -g eslint
-RUN npm install -g node@20.9.0
+RUN npm install -g node@18.18.0
 
 # install azure cli
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
