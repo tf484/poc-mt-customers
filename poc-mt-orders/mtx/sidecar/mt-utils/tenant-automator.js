@@ -1,19 +1,23 @@
-const cfenv = require("cfenv")
-const xsenv = require("@sap/xsenv")
+// const cfenv = require("cfenv")
+// const xsenv = require("@sap/xsenv")
 
 const { composeServiceManager } = require("./service-manager")
 const { composeCredentialStore } = require("./credential-store")
 const { composeOAuthTokenUtility } = require("./oauth-token-utility")
 const { composeCloudManagementCentral } = require("./cloud-management-central")
-const { composeCloudFoundryCLI } = require("./cloud-foundry-cli")
+const { composeCloudFoundry } = require("./cloud-foundry")
+
+const CREDENTIAL_TYPE_PASSWORD = "password"
+const CREDENTIAL_BTP_ADMIN = "btp-admin-user"
+const CREDENTIAL_BROKER_USER = "broker-credentials"
 
 /**
  * Deploy Tenant Artifacts
- * @param {{process:object}} env
- * @param {{subAccountID:string,subDomain:string}} state
- * @param {{createRoute:function}} createRoute
- * @param {{registerBTPServiceBroker:function}} registerBTPServiceBroker
- * @param {{cleanUpCreatedServices:function}} cleanupCreatedServices
+ * @param {{logInfo:Function,logError:Function}} env
+ * @param {object} state
+ * @param {{createRoute:Function}} createRoute
+ * @param {{registerBTPServiceBroker:Function}} registerBTPServiceBroker
+ * @param {{cleanUpCreatedServices:Function}} cleanupCreatedServices
  */
 const canDeployTenantArtifacts = (env, state, { createRoute }, { registerBTPServiceBroker }, { cleanUpCreatedServices }) => {
   return {
@@ -22,9 +26,9 @@ const canDeployTenantArtifacts = (env, state, { createRoute }, { registerBTPServ
         await createRoute()
         await registerBTPServiceBroker()
         await cleanUpCreatedServices()
-        console.log("Tenant Automation: Deployment has been completed successfully!")
+        env.logInfo("Tenant Automation: Deployment has been completed successfully!")
       } catch (error) {
-        console.log("Tenant Automation Error during deployment of Artifacts")
+        env.logError("Tenant Automation Error during deployment of Artifacts")
         throw error
       }
     },
@@ -33,11 +37,11 @@ const canDeployTenantArtifacts = (env, state, { createRoute }, { registerBTPServ
 
 /**
  * Undeploy Tenant Artifacts
- * @param {{process:object}} env
- * @param {{subAccountID:string,subDomain:string}} state
- * @param {{deleteRoute:function}} deleteRoute
- * @param {{unregisterBTPServiceBroker}} unregisterBTPServiceBroker
- * @param {{cleanUpCreatedServices}} cleanUpCreatedServices
+ * @param {{logInfo:Function,logError:Function}} env
+ * @param {object} state
+ * @param {{deleteRoute:Function}} deleteRoute
+ * @param {{unregisterBTPServiceBroker:Function}} unregisterBTPServiceBroker
+ * @param {{cleanUpCreatedServices:Function}} cleanUpCreatedServices
  */
 const canUndeployTenantArtifacts = (env, state, { deleteRoute }, { unregisterBTPServiceBroker }, { cleanUpCreatedServices }) => {
   return {
@@ -46,9 +50,9 @@ const canUndeployTenantArtifacts = (env, state, { deleteRoute }, { unregisterBTP
         await deleteRoute()
         await unregisterBTPServiceBroker()
         await cleanUpCreatedServices()
-        console.log("Automation: Undeployment has been completed successfully!")
+        env.logInfo("Automation: Undeployment has been completed successfully!")
       } catch (error) {
-        console.error("Tenant artifacts cannot be undeployed!")
+        env.logError("Tenant artifacts cannot be undeployed!")
         throw error
       }
     },
@@ -57,17 +61,17 @@ const canUndeployTenantArtifacts = (env, state, { deleteRoute }, { unregisterBTP
 
 /**
  * Register BTP Service Broker
- * @param {object} env
- * @param {{cloudManagementCentral:object, subAccountID:string}} state
+ * @param {{logInfo:Function,logError:Function,getTenantSubaccountID:Function}} env
+ * @param {{cloudManagementCentral:object}} state
  */
 const canCleanUpCreatedServices = (env, state) => {
   return {
     cleanUpCreatedServices: async () => {
       try {
-        await state.cloudManagementCentral.deleteServiceManager(state.subAccountID)
-        console.log("Service Manager is deleted")
+        await state.cloudManagementCentral.deleteServiceManager(env.getTenantSubaccountID())
+        env.logInfo("Service Manager is deleted")
       } catch (error) {
-        console.error("Clean up can not be completed!")
+        env.logError("Clean up can not be completed!")
         throw error
       }
     },
@@ -76,26 +80,26 @@ const canCleanUpCreatedServices = (env, state) => {
 
 /**
  * Register BTP Service Broker
- * @param {{process:object, appEnv:object}} env
+ * @param {{logInfo:Function,logError:Function,getBrokerName:Function,getBrokerUrl:Function,getSpaceName:Function}} env
  * @param {{serviceManager:object, credentials:Map}} state
  */
 const canRegisterBTPServiceBroker = (env, state) => {
   return {
     registerBTPServiceBroker: async () => {
       try {
-        let sbCreds = state.credentials.get(`broker-credentials`)
-        let sbUrl = env.process.env.brokerUrl
+        let sbCreds = state.credentials.get(CREDENTIAL_BROKER_USER)
+        let sbUrl = env.getBrokerUrl()
         await state.serviceManager.createServiceBroker(
-          `${env.process.env.brokerName}-${env.appEnv.app.space_name}`,
+          `${env.getBrokerName()}-${env.getSpaceName()}`,
           sbUrl,
           "AICOMP API Broker",
           sbCreds.username,
           sbCreds.value
         )
-        console.log(`Inbound API Broker ${env.process.env.brokerName} registered successfully!`)
+        env.logInfo(`Inbound API Broker ${env.getBrokerName()} registered successfully!`)
       } catch (error) {
-        console.log("ERROR DURING BTP SERVICE BROKER =====>", error)
-        console.error("Service broker cannot be registered!")
+        env.logError("Service broker cannot be registered!")
+        throw error
       }
     },
   }
@@ -103,18 +107,19 @@ const canRegisterBTPServiceBroker = (env, state) => {
 
 /**
  * Unregister BTP Service Broker
- * @param {{process:object, appEnv}} env
- * @param {{serviceManager:object, credentials:Map, subAccountID:string}} state
+ * @param {{logInfo:Function,logError:Function,getBrokerName:Function,getBrokerUrl:Function,getSpaceName:Function,getTenantSubaccountID:Function}} env
+ * @param {{serviceManager:object}} state
  */
 const canUnregisterBTPServiceBroker = (env, state) => {
   return {
     unregisterBTPServiceBroker: async () => {
       try {
-        let sb = await state.serviceManager.getServiceBroker(`${env.process.env.brokerName}-${env.appEnv.app.space_name}-${state.subAccountID}`)
-        await state.serviceManager.deleteServiceBroker(sb.id)
-        console.log(`Service Broker ${env.process.env.brokerName} deleted`)
+        const serviceBroker = await state.serviceManager.getServiceBroker(`${env.getBrokerName()}-${env.getSpaceName()}-${env.getTenantSubaccountID()}`)
+        await state.serviceManager.deleteServiceBroker(serviceBroker.id)
+        env.logInfo(`Service Broker ${env.getBrokerName()} deleted`)
       } catch (error) {
-        console.log(`Service Broker ${env.process.env.brokerName} can not be deleted`)
+        env.logError(`Service Broker ${env.getBrokerName()} can not be deleted`)
+        throw error
       }
     },
   }
@@ -122,19 +127,19 @@ const canUnregisterBTPServiceBroker = (env, state) => {
 
 /**
  * Create Cloud Foundry Route
- * @param {{process:object}} env
- * @param {{subDomain:string, cf:object}} state
+ * @param {{logInfo:Function,logError:Function,getTenantSubdomain:Function,getTenantSeparator:Function,getSaasAppName:Function, getCloudFoundryAppName}} env
+ * @param {{cloudFoundry:object}} state
  */
 const canCreateRoute = (env, state) => {
   return {
     createRoute: async () => {
       try {
-        const tenantHost = state.subDomain + process.env.tenantSeparator + process.env.saasAppName
-        const appName = process.env.cfAppName
-        await state.cf.createRoute(tenantHost, appName)
-        console.log(`Route created for tenantHost: ${tenantHost} and appName: ${appName}`)
+        const tenantHost = env.getTenantSubdomain() + env.getTenantSeparator() + env.getSaasAppName()
+        const appName = env.getCloudFoundryAppName()
+        await state.cloudFoundry.createRoute(tenantHost, appName)
+        env.logInfo(`Route created for tenantHost: ${tenantHost} and appName: ${appName}`)
       } catch (error) {
-        console.error("Route could not be created!")
+        env.logError("Route could not be created!")
         throw error
       }
     },
@@ -143,89 +148,68 @@ const canCreateRoute = (env, state) => {
 
 /**
  * Delete Cloud Foundry Route
- * @param {{process:object}} env
- * @param {{subDomain:string, cf:object}} state
+ * @param {{logInfo:Function,logError:Function,getTenantSubdomain:Function,getTenantSeparator:Function,getSaasAppName:Function, getCloudFoundryAppName}} env
+ * @param {{cloudFoundry:object}} state
  */
 const canDeleteRoute = (env, state) => {
   return {
-    deleteRoute: async (unsubscribedSubdomain) => {
+    deleteRoute: async () => {
       try {
-        const tenantHost = state.subDomain + process.env.tenantSeparator + process.env.saasAppName
-        const appName = process.env.cfAppName
-        await state.cf.deleteRoute(tenantHost, appName)
+        const tenantHost = env.getTenantSubdomain() + env.getTenantSeparator() + env.getSaasAppName()
+        const appName = env.getCloudFoundryAppName()
+        await state.cloudFoundry.deleteRoute(tenantHost, appName)
+        env.logInfo(`Route deleted for tenantHost: ${tenantHost} and appName: ${appName}`)
       } catch (error) {
-        console.error("Route could not be deleted!")
+        env.logError("Route could not be deleted!")
         throw error
       }
     },
   }
 }
 
-const composeTenantAutomator = async (subAccountID, subDomain, credentialStoreContext) => {
-  const appEnv = cfenv.getAppEnv()
-  xsenv.loadEnv()
-
-  const credentials = new Map()
+/**
+ *
+ * @param {{logDebug,logError,logInfo,getCredentialStoreNamespace,getTenantSubdomain,getTenantSubaccountID,getTenantSeparator,getSaasAppName,getCloudFoundryAppName,getBrokerName,getBrokerUrl,getSpaceName}} env
+ */
+const composeTenantAutomator = async (env) => {
   try {
-    const credStore = composeCredentialStore(credentialStoreContext)
 
-    let creds = await Promise.all([credStore.readCredential("password", "btp-admin-user"), credStore.readCredential("password", "broker-credentials")])
+    const credentials = new Map()
+    const credStore = composeCredentialStore(env, env.getCredentialStoreNamespace())
+
+    const creds = await Promise.all([
+      credStore.readCredential(CREDENTIAL_TYPE_PASSWORD, CREDENTIAL_BTP_ADMIN),
+      credStore.readCredential(CREDENTIAL_TYPE_PASSWORD, CREDENTIAL_BROKER_USER),
+    ])
     creds.forEach((cred) => {
       credentials.set(cred.name, cred)
     })
 
-    console.log("Credentials retrieved from credential store successfully")
+    const btpAdmin = credentials.get(CREDENTIAL_BTP_ADMIN)
+
+    const cloudFoundry = composeCloudFoundry(env)
+    await cloudFoundry.login(btpAdmin.username, btpAdmin.value)
+
+    const cloudManagementCentral = composeCloudManagementCentral(env, btpAdmin.username, btpAdmin.value, composeOAuthTokenUtility)
+    const serviceManagerCredentials = await cloudManagementCentral.createServiceManager(env.getTenantSubaccountID())
+
+    const serviceManager = composeServiceManager(env, serviceManagerCredentials, composeOAuthTokenUtility)
+
+    const state = {
+      cloudFoundry,
+      cloudManagementCentral,
+      serviceManager,
+      credentials,
+    }
+    env.logInfo("Tenant Automator Created")
+
+    return {
+      ...canDeployTenantArtifacts(env, state, canCreateRoute(env, state), canRegisterBTPServiceBroker(env, state), canCleanUpCreatedServices(env, state)),
+      ...canUndeployTenantArtifacts(env, state, canDeleteRoute(env, state), canUnregisterBTPServiceBroker(env, state), canCleanUpCreatedServices(env, state)),
+    }
   } catch (error) {
-    console.error("Unable to retrieve credentials from cred store, please make sure that they are created! Automation skipped!")
+    env.logError("Unable to compose Tenant Automator")
     throw error
-  }
-
-  const btpAdmin = credentials.get("btp-admin-user")
-
-  let cf = {}
-  try {
-    cf = composeCloudFoundryCLI()
-    await cf.login(btpAdmin.username, btpAdmin.value)
-    console.log("Cloud Foundry CLI login successful")
-  } catch (error) {
-    console.error("Unable to login to Cloud Foundry CLI! Automation skipped!")
-    throw error
-  }
-
-  let cloudManagementCentral = {}
-  let serviceManager = {}
-  try {
-    cloudManagementCentral = composeCloudManagementCentral(btpAdmin.username, btpAdmin.value, composeOAuthTokenUtility)
-    // try{
-    //   await cloudManagementCentral.deleteServiceManager(subAccountID)
-    // } catch (e){
-    //   //nothing
-    // }
-    let serviceManagerCredentials = await cloudManagementCentral.createServiceManager(subAccountID)
-    console.log("Service manager has been created successfully!")
-    serviceManager = composeServiceManager(serviceManagerCredentials, composeOAuthTokenUtility)
-  } catch (error) {
-    console.error("Service Manager can not be created!")
-    throw error
-  }
-
-  const env = {
-    process,
-    appEnv,
-  }
-
-  const state = {
-    cf,
-    cloudManagementCentral,
-    serviceManager,
-    credentials,
-    subAccountID,
-    subDomain,
-  }
-
-  return {
-    ...canDeployTenantArtifacts(env, state, canCreateRoute(env, state), canRegisterBTPServiceBroker(env, state), canCleanUpCreatedServices(env, state)),
-    ...canUndeployTenantArtifacts(env, state, canDeleteRoute(env, state), canUnregisterBTPServiceBroker(env, state), canCleanUpCreatedServices(env, state)),
   }
 }
 

@@ -1,93 +1,111 @@
 const cds = require("@sap/cds")
-// const debug = require("debug")("srv:provisioning")
-// const cfenv = require("cfenv")
-// const appEnv = cfenv.getAppEnv()
-// const xsenv = require("@sap/xsenv")
+const cfenv = require("cfenv")
+const xsenv = require("@sap/xsenv")
+const axios = require("axios")
+const fetch = require("node-fetch")
+const jose = require("node-jose")
 const { composeTenantAutomator } = require("./tenant-automator")
-//const alertNotification = require('./utils/alertNotification');
-// xsenv.loadEnv()
+const { composeEnvironment } = require("./mt-env")
 
-const CREDENTIAL_STORE_CONTEXT = "poc-mt-orders"
+xsenv.loadEnv()
+const cisCentralServices = xsenv.getServices({ cisCentral: { label: "cis" } })
+if (!cisCentralServices.cisCentral) throw new Error("CIS Central Binding not found from xsenv.services")
+const credStoreServices = xsenv.getServices({ credStore: { tag: "credstore" } })
+if (!credStoreServices.credStore) throw new Error("Credential Store Binding not found from xsenv.services")
 
-module.exports = (service) => {
-  service.on("subscribe", async (req, next) => {
-    await next()
+const appEnv = cfenv.getAppEnv()
 
-    console.log("====> Subscription data:", JSON.stringify(req.data))
-    if (req.data.metadata) {
-      const tenantSubdomain = req.data.metadata.subscribedSubdomain
-      const tenantSubaccountId = req.data.metadata.subscribedSubaccountId
-      // // Trigger tenant broker deployment on background
-      // cds.spawn({ tenant: tenant }, async (tx) => {
-      //     try {
-      console.log(`TENANT SUB_DOMAIN =====> ${tenantSubdomain}`)
-      console.log(`TENANT SUB_ACCOUNT_ID =====> ${tenantSubaccountId}`)
-      const tenantAutomator = await composeTenantAutomator(tenantSubaccountId, tenantSubdomain, CREDENTIAL_STORE_CONTEXT)
-      await tenantAutomator.deployTenantArtifacts()
-      //     } catch (error) {
-      //         // Send generic alert using Alert Notification
-      //         // alertNotification.sendEvent({
-      //         //     type : 'GENERIC',
-      //         //     data : {
-      //         //         subject : 'Error: Automation skipped because of error during subscription',
-      //         //         body : JSON.stringify(error.message),
-      //         //         eventType : 'alert.app.generic',
-      //         //         severity : 'FATAL',
-      //         //         category : 'ALERT'
-      //         //     }
-      //         // });
-      //         console.error("Error: Automation skipped because of error during subscription");
-      //         console.error(`Error: ${error.message}`);
-      //     }
-      // })
-    }
-  })
+let initValues = null
 
-  service.on("unsubscribe", async (req, next) => {
-    await next()
+module.exports = {
+  tenantDeployment: (service) => {
+    service.on("subscribe", async (req, next) => {
+      await next()
 
-    console.log("====> Subscription data:", JSON.stringify(req.data))
-    if (req.data.options) {
-      const tenantSubdomain = req.data.options.subscribedSubdomain
-      const tenantSubaccountId = req.data.options.subscribedSubaccountId
-      console.log(`TENANT SUB_DOMAIN =====> ${tenantSubdomain}`)
-      console.log(`TENANT SUB_ACCOUNT_ID =====> ${tenantSubaccountId}`)
-      const tenantAutomator = await composeTenantAutomator(tenantSubaccountId, tenantSubdomain, CREDENTIAL_STORE_CONTEXT)
-      await tenantAutomator.undeployTenantArtifacts()
-    }
-    // let tenantSubdomain = req.data.subscribedSubdomain;
-    // let tenantSubaccountId = req.data.subscribedSubaccountId;
-    // console.log('Unsubscribe Data: ', JSON.stringify(req.data));
-    // await next();
-    // try {
-    //     const tenantAutomator = await composeTenantAutomator(tenantSubaccountId, tenantSubdomain, CREDENTIAL_STORE_CONTEXT)
-    //     await tenantAutomator.undeployTenantArtifacts();
-    // } catch (error) {
-    //     console.error("Error: Automation skipped because of error during unsubscription");
-    //     console.error(`Error: ${error.message}`);
-    // }
-    // return req.data.subscribedTenantId;
-  })
+      if(!initValues) throw new Error('Deployment has not been initialized')
 
-  service.on("upgrade", async (req, next) => {
-    await next()
-    console.log("====> Upgrade data:", JSON.stringify(req.data))
-    //const { instanceData, deploymentOptions } = cds.context.req.body;
-    // const { instanceData, deploymentOptions } = req.body
-    // console.log('UpgradeTenant: ', req.data.subscribedTenantId, req.data.subscribedSubdomain, instanceData, deploymentOptions);
-  })
+      if (req.data.metadata) {
+        const tenantSubdomain = req.data.metadata.subscribedSubdomain
+        const tenantSubaccountID = req.data.metadata.subscribedSubaccountId
 
-  // service.on('dependencies', async (req, next) => {
-  //     let dependencies = await next();
-  //     const services = xsenv.getServices({
-  //         registry: { tag: 'SaaS' },
-  //         html5Runtime: { tag: 'html5-apps-repo-rt' }
-  //         //destination: { tag: 'destination' }
-  //     });
-  //     // @ts-ignore
-  //     dependencies.push({ xsappname: services.html5Runtime.uaa.xsappname });
-  //     //dependencies.push({ xsappname: services.destination.xsappname });
-  //     console.log("SaaS Dependencies:", JSON.stringify(dependencies));
-  //     return dependencies;
-  // });
+        const env = composeEnvironment(
+          cds,
+          axios,
+          fetch,
+          jose,
+          tenantSubdomain,
+          tenantSubaccountID,
+          initValues.credentialStoreNamespace,
+          process.env.tenantSeparator,
+          process.env.saasAppName,
+          process.env.cfAppName,
+          appEnv.app.cf_api,
+          process.env.brokerName,
+          process.env.brokerUrl,
+          appEnv.app.space_name,
+          appEnv.app.space_id,
+          appEnv.app.organization_id,
+          appEnv.app.application_uris[0],
+          cisCentralServices.cisCentral,
+          credStoreServices.credStore
+        )
+
+        env.logDebug("====> Subscribe data:", JSON.stringify(req.data))
+
+        const tenantAutomator = await composeTenantAutomator(env)
+        await tenantAutomator.deployTenantArtifacts()
+      }
+    })
+
+    service.on("unsubscribe", async (req, next) => {
+      await next()
+
+      if(!initValues) throw new Error('Deployment has not been initialized')
+
+      if (req.data.options) {
+        const tenantSubdomain = req.data.options.subscribedSubdomain
+        const tenantSubaccountID = req.data.options.subscribedSubaccountId
+
+        const env = composeEnvironment(
+          cds,
+          axios,
+          fetch,
+          jose,
+          tenantSubdomain,
+          tenantSubaccountID,
+          initValues.credentialStoreNamespace,
+          process.env.tenantSeparator,
+          process.env.saasAppName,
+          process.env.cfAppName,
+          appEnv.app.cf_api,
+          process.env.brokerName,
+          process.env.brokerUrl,
+          appEnv.app.space_name,
+          appEnv.app.space_id,
+          appEnv.app.organization_id,
+          appEnv.app.application_uris[0],
+          cisCentralServices.cisCentral,
+          credStoreServices.credStore
+        )
+
+        env.logDebug("====> Unsubscribe data:", JSON.stringify(req.data))
+
+        const tenantAutomator = await composeTenantAutomator(env)
+        await tenantAutomator.undeployTenantArtifacts()
+      }
+    })
+
+    // service.on("upgrade", async (req, next) => {
+    //   await next()
+      
+    // })
+  },
+
+  /**
+   *
+   * @param {{credentialStoreNamespace:string}} values
+   */
+  initialize: (values) => {
+    initValues = values
+  },
 }

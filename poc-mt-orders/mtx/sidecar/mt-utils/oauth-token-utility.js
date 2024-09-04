@@ -1,7 +1,5 @@
-const axios = require("axios")
-
 /**
- * @param {{axios}} env
+ * @param {{logInfo:Function,logError:Function,axios}} env
  */
 const canGetTokenWithPassword = (env) => {
   return {
@@ -30,18 +28,19 @@ const canGetTokenWithPassword = (env) => {
           }).toString(),
         }
         let response = await env.axios(authOptions)
-        console.log("Token Retrieved successfully")
+
+        env.logInfo("Password Token Retrieved successfully")
         return response.data.access_token
       } catch (error) {
-        console.error("Error: Token can not be retrieved!")
-        throw error.response.status
+        env.logError("Password Token can not be retrieved!")
+        throw error
       }
     },
   }
 }
 
 /**
- * @param {{axios}} env
+ * @param {{logInfo:Function,logError:Function,axios}} env
  */
 const canGetTokenWithClientCreds = (env) => {
   return {
@@ -67,20 +66,18 @@ const canGetTokenWithClientCreds = (env) => {
           }).toString(),
         }
         let response = await env.axios(authOptions)
+
+        env.logInfo("Password Token Retrieved successfully")
         return response.data.access_token
       } catch (error) {
-        console.error("Error: Token can not be retrieved!")
-        throw error.response.status
+        env.logError("Client Credential Token can not be retrieved!")
+        throw error
       }
     },
   }
 }
 
-const composeOAuthTokenUtility = () => {
-  const env = {
-    axios,
-  }
-
+const composeOAuthTokenUtility = (env) => {
   return {
     ...canGetTokenWithPassword(env),
     ...canGetTokenWithClientCreds(env),

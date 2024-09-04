@@ -1,10 +1,8 @@
-const axios = require("axios")
-
 /**
  *
- * @param {{oAuthTokenUtility:object, axios:object}} env
+ * @param {{logInfo:Function,logError:Function,axios:object}} env
  * @param {{serviceCredentials:object}} state
- * @param {{getToken:function}} getToken
+ * @param {{getToken:Function}} getToken
  */
 const canCreateServiceInstance = (env, state, { getToken }) => {
   return {
@@ -29,11 +27,11 @@ const canCreateServiceInstance = (env, state, { getToken }) => {
           data: JSON.stringify(body),
         }
         let response = await env.axios(optionsInstance)
-        console.log(`Service instance successfully created for ${serviceOffering}-${servicePlan}`)
+
+        env.logInfo(`Service instance successfully created for ${serviceOffering}-${servicePlan}`)
         return response.data
       } catch (error) {
-        console.error(`Error: Service instance can not be created for ${serviceOffering}-${servicePlan}`)
-        console.error(error.message)
+        env.logError(`Service instance can not be created for ${serviceOffering}-${servicePlan}`)
         throw error
       }
     },
@@ -42,9 +40,9 @@ const canCreateServiceInstance = (env, state, { getToken }) => {
 
 /**
  *
- * @param {{oAuthTokenUtility:object, axios:object}} env
+ * @param {{logInfo:Function,logError:Function,axios:object}} env
  * @param {{serviceCredentials:object}} state
- * @param {{getToken:function}} getToken
+ * @param {{getToken:Function}} getToken
  */
 const canCreateServiceBinding = (env, state, { getToken }) => {
   return {
@@ -61,10 +59,11 @@ const canCreateServiceBinding = (env, state, { getToken }) => {
           data: JSON.stringify({ name: subscribingSubdomain, service_instance_id: serviceInstanceId }),
         }
         let response = await env.axios(options)
-        console.log(`Service binding created for ${serviceInstanceId}`)
+
+        env.logInfo(`Service binding created for ${serviceInstanceId}`)
         return response.data
       } catch (error) {
-        console.error(`Error: Service binding can not be created for ${serviceInstanceId}`)
+        env.logError(`Service binding can not be created for ${serviceInstanceId}`)
         throw error
       }
     },
@@ -73,9 +72,9 @@ const canCreateServiceBinding = (env, state, { getToken }) => {
 
 /**
  *
- * @param {{oAuthTokenUtility:object, axios:object}} env
+ * @param {{logInfo:Function,logError:Function,axios:object}} env
  * @param {{serviceCredentials:object}} state
- * @param {{getToken:function}} getToken
+ * @param {{getToken:Function}} getToken
  */
 const canDeleteServiceInstance = (env, state, { getToken }) => {
   return {
@@ -91,12 +90,12 @@ const canDeleteServiceInstance = (env, state, { getToken }) => {
           },
         }
         let response = await env.axios(optionsInstance)
-        console.log(`Service instance ${serviceInstanceId} successfully deleted`)
+
+        env.logInfo(`Service instance ${serviceInstanceId} successfully deleted`)
         return response.data
       } catch (error) {
-        console.error(`Error: Service instance can not be deleted`)
-        console.error(error.message)
-        throw error.message
+        env.logError(`Service instance can not be deleted`)
+        throw error
       }
     },
   }
@@ -104,9 +103,9 @@ const canDeleteServiceInstance = (env, state, { getToken }) => {
 
 /**
  *
- * @param {{oAuthTokenUtility:object, axios:object}} env
+ * @param {{logInfo:Function,logError:Function,axios:object}} env
  * @param {{serviceCredentials:object}} state
- * @param {{getToken:function}} getToken
+ * @param {{getToken:Function}} getToken
  */
 const canDeleteServiceBinding = (env, state, { getToken }) => {
   return {
@@ -122,12 +121,12 @@ const canDeleteServiceBinding = (env, state, { getToken }) => {
           },
         }
         let response = await env.axios(optionsInstance)
-        console.log(`Service binding ${serviceBindingId} successfully deleted`)
+
+        env.logInfo(`Service binding ${serviceBindingId} successfully deleted`)
         return response.data
       } catch (error) {
-        console.error(`Error: Service binding can not be deleted`)
-        console.error(error.message)
-        throw error.message
+        env.logError(`Service binding can not be deleted`)
+        throw error
       }
     },
   }
@@ -135,9 +134,9 @@ const canDeleteServiceBinding = (env, state, { getToken }) => {
 
 /**
  *
- * @param {{oAuthTokenUtility:object, axios:object}} env
+ * @param {{logInfo:Function,logError:Function,axios:object}} env
  * @param {{serviceCredentials:object}} state
- * @param {{getToken:function}} getToken
+ * @param {{getToken:Function}} getToken
  */
 const canGetAllServiceBindings = (env, state, { getToken }) => {
   return {
@@ -154,10 +153,11 @@ const canGetAllServiceBindings = (env, state, { getToken }) => {
           },
         }
         let response = await env.axios(optionsBinding)
-        console.log(`Successfully retrieved service bindings for ${tenant}`)
+
+        env.logInfo(`Successfully retrieved service bindings for ${tenant}`)
         return response.data.items
       } catch (error) {
-        console.error("Error: Can not retrieve service bindings")
+        env.logError("Can not retrieve service bindings")
         throw error
       }
     },
@@ -166,8 +166,8 @@ const canGetAllServiceBindings = (env, state, { getToken }) => {
 
 /**
  *
- * @param {{oAuthTokenUtility:object}} env
- * @param {{serviceCredentials:object, tokenStore:object}} state
+ * @param {{logInfo:Function,logError:Function}} env
+ * @param {{serviceCredentials:object, oAuthTokenUtility:object, tokenStore:object}} state
  */
 const canGetToken = (env, state) => {
   return {
@@ -175,7 +175,7 @@ const canGetToken = (env, state) => {
       try {
         if (!state.tokenStore.token) {
           let tokenEndpoint = state.serviceCredentials.url + "/oauth/token"
-          state.tokenStore.token = await env.oAuthTokenUtility.getTokenWithClientCreds(
+          state.tokenStore.token = await state.oAuthTokenUtility.getTokenWithClientCreds(
             tokenEndpoint,
             state.serviceCredentials.clientid,
             state.serviceCredentials.clientsecret
@@ -183,8 +183,8 @@ const canGetToken = (env, state) => {
         }
         return state.tokenStore.token
       } catch (error) {
-        console.error("Error: Unable to get a token for Service Manager")
-        throw error.message
+        env.logError("Unable to get a token for Service Manager")
+        throw error
       }
     },
   }
@@ -192,9 +192,9 @@ const canGetToken = (env, state) => {
 
 /**
  *
- * @param {{oAuthTokenUtility:object, axios:object}} env
+ * @param {{logInfo:Function,logError:Function,axios:object}} env
  * @param {{serviceCredentials:object}} state
- * @param {{getToken:function}} getToken
+ * @param {{getToken:Function}} getToken
  */
 const canCreateServiceBroker = (env, state, { getToken }) => {
   return {
@@ -222,40 +222,11 @@ const canCreateServiceBroker = (env, state, { getToken }) => {
           data: JSON.stringify(body),
         }
         let response = await env.axios(options)
-        console.log(`Service Broker ${name} successfully created`)
-        return response.data
-      } catch (error) {
-        console.error("Error: Service Broker can not be created")
-      }
-    },
-  }
-}
 
-/**
- *
- * @param {{oAuthTokenUtility:object, axios:object}} env
- * @param {{serviceCredentials:object}} state
- * @param {{getToken:function}} getToken
- */
-const canDeleteServiceBroker = (env, state, { getToken }) => {
-  return {
-    deleteServiceBroker: async (serviceBrokerId) => {
-      try {
-        let token = await getToken()
-        let options = {
-          method: "DELETE",
-          url: state.serviceCredentials.sm_url + `/v1/service_brokers/${serviceBrokerId}`,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-        let response = await env.axios(options)
-        console.log(`Service Broker ${serviceBrokerId} successfully deleted`)
+        env.logInfo(`Service Broker ${name} successfully created`)
         return response.data
       } catch (error) {
-        console.error(`Deletion of Service Broker ${serviceBrokerId} caused the following error:`, error.message)
-        console.error("Error: Service Broker can not be deleted")
+        env.logError("Service Broker can not be created")
         throw error
       }
     },
@@ -264,17 +235,49 @@ const canDeleteServiceBroker = (env, state, { getToken }) => {
 
 /**
  *
- * @param {{oAuthTokenUtility:object, axios:object}} env
+ * @param {{logInfo:Function,logError:Function,axios:object}} env
  * @param {{serviceCredentials:object}} state
- * @param {{getToken:function}} getToken
+ * @param {{getToken:Function}} getToken
+ */
+const canDeleteServiceBroker = (env, state, { getToken }) => {
+  return {
+    deleteServiceBroker: async (serviceBrokerId) => {
+      try {
+        const token = await getToken()
+        const deleteUrl = state.serviceCredentials.sm_url + `/v1/service_brokers/${serviceBrokerId}`
+        const options = {
+          method: "DELETE",
+          url: deleteUrl,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+
+        const response = await env.axios(options)
+        env.logInfo(`Service Broker ${serviceBrokerId} successfully deleted`)
+        return response.data
+      } catch (error) {
+        env.logError("Service Broker can not be deleted")
+        throw error
+      }
+    },
+  }
+}
+
+/**
+ *
+ * @param {{logInfo:Function,logError:Function,axios:object}} env
+ * @param {{serviceCredentials:object}} state
+ * @param {{getToken:Function}} getToken
  */
 const canGetServiceBroker = (env, state, { getToken }) => {
   return {
     getServiceBroker: async (name) => {
       try {
-        let query = encodeURIComponent(`fieldQuery=name eq '${name}'`)
-        let token = await getToken()
-        let options = {
+        const query = encodeURIComponent(`fieldQuery=name eq '${name}'`)
+        const token = await getToken()
+        const options = {
           method: "GET",
           url: state.serviceCredentials.sm_url + `/v1/service_brokers/?${query}`,
           headers: {
@@ -282,25 +285,22 @@ const canGetServiceBroker = (env, state, { getToken }) => {
             Authorization: `Bearer ${token}`,
           },
         }
-        let response = await env.axios(options)
-        console.log(`Service Broker ${name} successfully retrieved`)
+        const response = await env.axios(options)
+        env.logInfo(`Service Broker ${name} successfully retrieved`)
         return response.data.items[0]
       } catch (error) {
-        console.error("Error: Unable to retrieve Service Broker")
+        env.logError("Unable to retrieve Service Broker")
         throw error
       }
     },
   }
 }
 
-const composeServiceManager = (serviceCredentials, composeOAuthTokenUtility) => {
-  const oAuthTokenUtility = composeOAuthTokenUtility()
-  const env = {
-    oAuthTokenUtility,
-    axios,
-  }
+const composeServiceManager = (env, serviceCredentials, composeOAuthTokenUtility) => {
+  const oAuthTokenUtility = composeOAuthTokenUtility(env)
 
   const state = {
+    oAuthTokenUtility,
     serviceCredentials,
     tokenStore: {},
   }

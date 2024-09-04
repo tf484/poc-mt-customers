@@ -1,28 +1,17 @@
-/*
-    Based on SAP Help document
-    https://help.sap.com/docs/CREDENTIAL_STORE/601525c6e5604e4192451d5e7328fa3c/decad8fa526c40138d2a6843fb6a82bb.html
-*/
-
-
-const fetch = require("node-fetch")
-const jose = require("node-jose")
-const xsenv = require("@sap/xsenv")
-
 
 /**
-* @param {*} env 
-* @param {*} state 
+* @param {{}} env 
+* @param {{}} state 
 */
 const canCheckStatus = (env, state) => {
  return {
    /**
     * check response and throw error if needed
     * @param {{ok:*,status:*,statusText:string}} response 
-    * @returns 
     */
    checkStatus: async (response) => {
      if (!response.ok) {
-       throw Error("checkStatus: " + response.status + " " + response.statusText)
+       throw new Error("Credential Store Status: " + response.status + " " + response.statusText)
      }
      return response
    },
@@ -32,7 +21,7 @@ const canCheckStatus = (env, state) => {
 /**
 * 
 * @param {{jose:object}} env 
-* @param {*} state 
+* @param {{}} state 
 */
 const canDecryptPayload = (env, state) => {
  return {
@@ -53,8 +42,8 @@ const canDecryptPayload = (env, state) => {
 
 /**
 * 
-* @param {{fetch:object}} env 
-* @param {{binding:object, namespace:string}} state 
+* @param {{fetch:object,getCredStore:Function}} env 
+* @param {{namespace:string}} state 
 * @returns 
 */
 const canGetHeaders = (env, state) => {
@@ -66,7 +55,8 @@ const canGetHeaders = (env, state) => {
     */
    getHeaders: async (init) => {
      const headers = new env.fetch.Headers(init)
-     headers.set("Authorization", `Basic ${Buffer.from(`${state.binding.username}:${state.binding.password}`).toString("base64")}`)
+     const credStore = env.getCredStore()
+     headers.set("Authorization", `Basic ${Buffer.from(`${credStore.username}:${credStore.password}`).toString("base64")}`)
      headers.set("sapcp-credstore-namespace", state.namespace)
      return headers
    },
@@ -76,9 +66,9 @@ const canGetHeaders = (env, state) => {
 /**
 * 
 * @param {{fetch:object}} env 
-* @param {object} state 
-* @param {{checkStatus:function}} checkStatus 
-* @param {{decryptPayload:function}} param3 
+* @param {{}} state 
+* @param {{checkStatus:Function}} checkStatus 
+* @param {{decryptPayload:Function}} param3 
 */
 const canFetchAndDecrypt = (env, state, { checkStatus }, { decryptPayload }) => {
  return {
@@ -103,10 +93,10 @@ const canFetchAndDecrypt = (env, state, { checkStatus }, { decryptPayload }) => 
 
 /**
 * 
-* @param {*} env 
-* @param {{binding}} state 
-* @param {{fetchAndDecrypt:function}} fetchAndDecrypt
-* @param {{getHeaders:function}} getHeaders
+* @param {{logInfo:Function,logError:Function,getCredStore:Function}} env 
+* @param {*} state 
+* @param {{fetchAndDecrypt:Function}} fetchAndDecrypt
+* @param {{getHeaders:Function}} getHeaders
 */
 const canReadCredential = (env, state, { fetchAndDecrypt }, { getHeaders }) => {
  return {
@@ -117,35 +107,34 @@ const canReadCredential = (env, state, { fetchAndDecrypt }, { getHeaders }) => {
     * @returns 
     */
    readCredential: async (type, name) => {
-     const headers = await getHeaders()
-     return fetchAndDecrypt(
-       state.binding.encryption.client_private_key,
-       `${state.binding.url}/${type}?name=${encodeURIComponent(name)}`,
-       "get",
-       headers
-     )
+    try{
+      const headers = await getHeaders()
+      const credStore = env.getCredStore()
+      const credential = fetchAndDecrypt(
+        credStore.encryption.client_private_key,
+        `${credStore.url}/${type}?name=${encodeURIComponent(name)}`,
+        "get",
+        headers
+      )
+      env.logInfo(`Credential ${name} successfully retrieved from Credential Store`)
+      return credential
+    } catch (error){
+      env.logError(`Failed to retrieve credential ${name} from Credential Store`)
+      throw error
+    }
    },
  }
 }
 
-const composeCredentialStore = (namespace) => {
- xsenv.loadEnv()
- const services = xsenv.getServices({ credStore: { tag: "credstore" } })
- const binding = services.credStore
- if (!binding) console.error("Credential Store Binding not found from xsenv.services")
+const composeCredentialStore = (env, namespace) => {
 
- const env = {
-   fetch,
-   jose,
- }
 
  const state = {
    namespace,
-   binding,
  }
 
  return {
-   ...canReadCredential(env,state, canFetchAndDecrypt(env, state, canCheckStatus(env, state), canDecryptPayload(env, state)), canGetHeaders(env, state)),
+   ...canReadCredential(env, state, canFetchAndDecrypt(env, state, canCheckStatus(env, state), canDecryptPayload(env, state)), canGetHeaders(env, state)),
  }
 }
 

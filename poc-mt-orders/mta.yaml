@@ -151,40 +151,51 @@ modules:
       - name: poc-mt-orders-destination
       - name: poc-mt-orders-connectivity
       - name: poc-mt-orders-db
+      - name: srv-sb-api
     properties:
       tenantSeparator: '-'
+      brokerUrl: ~{srv-sb-api/srv-url}
+      brokerName: ~{srv-sb-api/app-name}
 
   - name: poc-mt-orders-sb
     type: nodejs
     path: broker
     parameters:
+      app-name: poc-mt-orders-sb-${space}
       disk-quota: 1024M
       memory: 128M
       health-check-timeout: 180
     requires:
       - name: poc-mt-orders-auth
-      - name: poc-mt-orders-logging
       - name: srv-api
     build-parameters:
       builder: npm-ci
     properties:
       SBF_ENABLE_AUDITLOG: false
-      SBF_CATALOG_SUFFIX: ${space} # Make the service broker unique in the deployed space
+      SBF_CATALOG_FILE: ./catalog.json
+      SBF_CATALOG_SUFFIX: ${space}-${org} # Make the service broker unique in the deployed space
       SBF_BROKER_CREDENTIALS_HASH:  >
         {
           "broker-user": "sha256:xE6yQ6HTH/w+Y8NsxvaJMSG+DtcZj92Br0AQR1dUkKM=:6UX3/v+6ki073ZiQhas2yniwm6gimfBKsphGMCpLUNg="
         }
-      SBF_SERVICE_CONFIG:
+      SBF_SERVICE_CONFIG: 
         poc-mt-orders-api:
-          extend_xssecurity:
-            per_plan:
-              default:
-                authorities:
-                - $XSMASTERAPPNAME.plan_default
           extend_credentials:
             shared:
-              endpoints:
-                poc-mt-orders-api: '~{srv-api/srv-url}' # Tenant-specific OData endpoint for remote integrations      
+              apiUrl: ~{srv-api/srv-url}
+          extend_xssecurity:
+            per_plan:
+              default: 
+                authorities: 
+                - $XSMASTERAPPNAME.plan_default
+          extend_catalog:
+            metadata:
+              displayName : Aicomp Orders API
+    provides:
+      - name: srv-sb-api
+        properties:
+          app-name: ${app-name}
+          srv-url: ${default-url} 
 
 resources:
 

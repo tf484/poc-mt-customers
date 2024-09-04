@@ -23,5 +23,6 @@
   "attributes": [],
   "role-templates": [],
   "role-collections": [],
+  "authorities-inheritance": false,
   "authorities": ["$XSAPPNAME.mtdeployment"]
 }
