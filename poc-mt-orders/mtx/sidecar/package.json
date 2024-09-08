@@ -1,6 +1,7 @@
 {
   "name": "poc-mt-orders-mtx",
   "dependencies": {
+    "@aicomp-group/multi-tenant-plugin": "1.0.0",
     "@cap-js/hana": "^1",
     "@sap/cds": "^8",
     "@sap/cds-mtxs": "^2",
@@ -25,7 +26,11 @@
     "requires": {
       "destinations": true,
       "connectivity": true,
-      "html5appsrepo": true
+      "html5appsrepo": true,
+      "aicomp": {
+        "extendMtxDeployment": true,
+        "credentialStoreNamespace": "poc-mt-orders"
+      }
     }
   }
 }
