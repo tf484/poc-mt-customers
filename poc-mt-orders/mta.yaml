@@ -17,6 +17,8 @@ modules:
     path: gen/srv
     parameters:
       buildpack: nodejs_buildpack
+      memory: 256M
+      disk-quota: 512M
       readiness-health-check-type: http
       readiness-health-check-http-endpoint: /health
     build-parameters:
@@ -162,7 +164,7 @@ modules:
     path: broker
     parameters:
       app-name: poc-mt-orders-sb-${space}
-      disk-quota: 1024M
+      disk-quota: 512M
       memory: 128M
       health-check-timeout: 180
     requires:
