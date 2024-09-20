@@ -281,7 +281,7 @@ resources:
       config:
         xsappname: poc-mt-orders-${org}-${space}
         appName: poc-mt-orders-${org}-${space}
-        displayName: Aicomp Orders
+        displayName: Aicomp Orders App
         description: Aicomp MT POC Orders
         category: 'Applications / Multi-Customer Partner Solutions'
         appUrls:
