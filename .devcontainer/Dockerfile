@@ -24,6 +24,7 @@ RUN npm install -g @sap/generator-fiori
 RUN npm install -g @ui5/cli
 RUN npm install -g eslint
 RUN npm install -g node@18.18.0
+RUN git config --global --add safe.directory /workspaces/poc-mt-pkg
 
 # install azure cli
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash

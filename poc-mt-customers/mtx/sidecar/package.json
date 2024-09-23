@@ -1,0 +1,35 @@
+{
+  "name": "poc-mt-customers-mtx",
+  "dependencies": {
+    "@aicomp-group/multi-tenant-plugin": "^1.0.3",
+    "@cap-js/hana": "^1",
+    "@sap-cloud-sdk/connectivity": "^3.21.0",
+    "@sap-cloud-sdk/http-client": "^3.21.0",
+    "@sap-cloud-sdk/resilience": "^3.21.0",
+    "@sap/cds": "^8",
+    "@sap/cds-mtxs": "^2",
+    "@sap/xssec": "^4",
+    "express": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^1"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "cds": {
+    "profile": "mtx-sidecar",
+    "requires": {
+      "destinations": true,
+      "connectivity": true,
+      "aicomp": {
+        "extendMtxDeployment": true,
+        "extendMtxOptions": {
+          "automateRoute": true,
+          "automateServiceBrokerRegistration": false
+        },
+        "credentialStoreNamespace": "poc-mt-customers"
+      }
+    }
+  }
+}
