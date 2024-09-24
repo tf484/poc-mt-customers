@@ -20,8 +20,8 @@
     "@cap-js/sqlite": "^1",
     "@sap/cds-dk": "^8",
     "@sap/ux-specification": "^1.120.16",
-    "rimraf": "^5.0.5",
-    "npm-run-all": "^4"
+    "npm-run-all": "^4",
+    "rimraf": "^5.0.5"
   },
   "engines": {
     "node": "^18"
@@ -58,11 +58,19 @@
         "auth": "xsuaa",
         "multitenancy": true
       },
-      "uaa": {
-        "kind": "xsuaa"
+      "[development]": {
+        "db": {
+          "kind": "sqlite",
+          "impl": "@cap-js/sqlite",
+          "credentials": {
+            "url": "memory"
+          }
+        }
       }
     },
-    "profile": "with-mtx-sidecar"
+    "[production]": {
+      "profile": "with-mtx-sidecar"
+    }
   },
   "sapux": [
     "app/orders"
