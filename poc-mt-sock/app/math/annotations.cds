@@ -1,0 +1,1 @@
+using MathService as service from '../../srv/counter-service';

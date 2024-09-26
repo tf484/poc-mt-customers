@@ -1,0 +1,9 @@
+<mvc:View controllerName="math.controller.mathView"
+    xmlns:mvc="sap.ui.core.mvc" displayBlock="true"
+    xmlns="sap.m">
+    <Page id="page" title="{i18n>title}">
+        <content>
+            <Button id="buttonAddOne" text="Add 1"/>
+        </content>
+    </Page>
+</mvc:View>
