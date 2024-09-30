@@ -26,6 +26,7 @@
     "requires": {
       "destinations": true,
       "connectivity": true,
+      "html5-repo": true,
       "aicomp": {
         "extendMtxDeployment": true,
         "extendMtxOptions": {

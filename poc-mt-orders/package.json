@@ -60,17 +60,13 @@
       },
       "[development]": {
         "db": {
-          "kind": "sqlite",
-          "impl": "@cap-js/sqlite",
           "credentials": {
-            "url": "memory"
+            "url": ":memory:"
           }
         }
       }
     },
-    "[production]": {
-      "profile": "with-mtx-sidecar"
-    }
+    "profile": "with-mtx-sidecar"
   },
   "sapux": [
     "app/orders"

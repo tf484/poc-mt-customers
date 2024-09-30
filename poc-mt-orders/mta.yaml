@@ -34,38 +34,48 @@ modules:
       - name: poc-mt-orders-logging
       - name: poc-mt-orders-db
 
-  # - name: poc-mt-orders-app-destination-content
-  #   type: com.sap.application.content
-  #   requires:
-  #   - name: poc-mt-orders-destination
-  #     parameters:
-  #       content-target: true
-  #   - name: poc-mt-orders-repo-host
-  #     parameters:
-  #       service-key:
-  #         name: poc-mt-orders-repo-host-key
-  #   - name: poc-mt-orders-auth
-  #     parameters:
-  #       service-key:
-  #         name: poc-mt-orders-auth-key
-  #   parameters:
-  #     memory: 256M
-  #     disk-quota: 512M
-  #     content:
-  #       instance:
-  #         destinations:
-  #         - Name: poc-mt-orders_poc-mt-orders-repo-host
-  #           ServiceInstanceName: poc-mt-orders-html5-srv
-  #           ServiceKeyName: poc-mt-orders-repo-host-key
-  #           sap.cloud.service: poc-mt-orders
-  #         - Authentication: OAuth2UserTokenExchange
-  #           Name: poc-mt-orders_poc-mt-orders-auth
-  #           ServiceInstanceName: poc-mt-orders-xsuaa
-  #           ServiceKeyName: poc-mt-orders-auth-key
-  #           sap.cloud.service: poc-mt-orders
-  #         existing_destinations_policy: ignore
-  #   build-parameters:
-  #     no-source: true
+  - name: poc-mt-orders-app-destination-content
+    type: com.sap.application.content
+    requires:
+    - name: poc-mt-orders-destination
+      parameters:
+        content-target: true
+    - name: poc-mt-orders-repo-host
+      parameters:
+        service-key:
+          name: poc-mt-orders-repo-host-key
+    - name: poc-mt-orders-auth
+      parameters:
+        service-key:
+          name: poc-mt-orders-auth-key
+    - name: srv-api
+
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+      content:
+        instance:
+          destinations:
+          - Name: poc-mt-orders_poc-mt-orders-repo-host
+            ServiceInstanceName: poc-mt-orders-html5-srv
+            ServiceKeyName: poc-mt-orders-repo-host-key
+            sap.cloud.service: poc-mt-orders
+          - Authentication: OAuth2UserTokenExchange
+            Name: poc-mt-orders_poc-mt-orders-auth
+            ServiceInstanceName: poc-mt-orders-xsuaa
+            ServiceKeyName: poc-mt-orders-auth-key
+            sap.cloud.service: poc-mt-orders
+          - Authentication: OAuth2UserTokenExchange
+            Name: poc-mt-orders-ui-api
+            TokenServiceInstanceName: poc-mt-orders-xsuaa
+            TokenServiceKeyName: poc-mt-orders-auth-key
+            URL: ~{srv-api/srv-url}
+            HTML5.DynamicDestination: true
+            WebIDEEnabled: true
+            WebIDEUsage: odata_gen
+          existing_destinations_policy: update
+    build-parameters:
+      no-source: true
 
   - name: poc-mt-orders-app-content
     type: com.sap.application.content
@@ -113,11 +123,11 @@ modules:
       - name: poc-mt-orders-html5-runtime
       - name: poc-mt-orders-destination
       - name: poc-mt-orders-connectivity
-      - name: mtx-api
-        group: destinations
-        properties:
-          name: mtx-api # must be used in xs-app.json as well
-          url: ~{mtx-url}
+      # - name: mtx-api
+      #   group: destinations
+      #   properties:
+      #     name: mtx-api # must be used in xs-app.json as well
+      #     url: ~{mtx-url}
     properties:
       TENANT_HOST_PATTERN: '^(.*)-${default-uri}'
     provides:
@@ -145,6 +155,7 @@ modules:
       - name: poc-mt-orders-registry
       - name: aic-credential-store
       - name: poc-mt-orders-cis-central
+      - name: poc-mt-orders-html5-runtime
       - name: app-api
         properties:
           SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
