@@ -1,1 +1,1 @@
-using MathService as service from '../../srv/counter-service';
+using MathService as service from '../../srv/math-service';

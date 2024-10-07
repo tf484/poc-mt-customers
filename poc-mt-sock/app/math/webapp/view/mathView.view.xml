@@ -1,9 +1,145 @@
-<mvc:View controllerName="math.controller.mathView"
-    xmlns:mvc="sap.ui.core.mvc" displayBlock="true"
-    xmlns="sap.m">
-    <Page id="page" title="{i18n>title}">
+<mvc:View
+    controllerName="math.controller.mathView"
+    xmlns:mvc="sap.ui.core.mvc"
+    displayBlock="true"
+    xmlns="sap.m"
+>
+    <Page
+        id="page"
+        title="{i18n>title}"
+    >
         <content>
-            <Button id="buttonAddOne" text="Add 1"/>
+            <Panel id="panelAdd" />
+            <HBox
+                id="hbox01"
+                class="sapUiSmallMargin"
+                alignItems="Center"
+            >
+                <Input
+                    id="inputValue1"
+                    type="Number"
+                    value="{viewData>/inputValue1}"
+                />
+                <Label
+                    id="space01"
+                    class="sapUiTinyMarginEnd"
+                />
+                <Input
+                    id="inputValue2"
+                    type="Number"
+                    value="{viewData>/inputValue2}"
+                />
+                <Label
+                    id="space02"
+                    class="sapUiTinyMarginEnd"
+                />
+                <Button
+                    id="buttonAdd"
+                    icon="sap-icon://add"
+                    press=".onAdd"
+                />
+                <Button
+                    id="buttonSubtract"
+                    icon="sap-icon://less"
+                    press=".onSubtract"
+                />
+                <Label
+                    id="space03"
+                    class="sapUiLargeMarginEnd"
+                />
+                <Button
+                    id="buttonRefresh"
+                    icon="sap-icon://refresh"
+                    press=".onRefresh"
+                />
+                <Text
+                    id="refreshDateLabel"
+                    text="Last Refreshed: "
+                    class="sapUiTinyMarginBeginEnd"
+                />
+                <Text
+                    id="refreshDateText"
+                    text="{
+                        model: 'viewData',
+				        path: 'viewData>/lastRefreshed',
+				        type: 'sap.ui.model.type.Date',
+				        formatOptions: {
+				          pattern: 'yyyy/MM/dd hh:mm:ss'
+				        }
+				      }"
+                />
+            </HBox>
+
+            <HBox
+                id="hbox02"
+                class="sapUiSmallMargin"
+            >
+                <Table
+                    id="mathResults"
+                    items="{/MathResultsForUser}"
+                >
+                    <columns>
+                        <Column
+                            id="columnHeader1"
+                            width="10rem"
+                        >
+                            <Text
+                                id="columnHeader1Text"
+                                text="Operation"
+                            />
+                        </Column>
+                        <Column
+                            id="columnHeader2"
+                            width="10rem"
+                        >
+                            <Text
+                                id="columnHeader2Text"
+                                text="Input Value 1"
+                            />
+                        </Column>
+                        <Column
+                            id="columnHeader3"
+                            width="10rem"
+                        >
+                            <Text
+                                id="columnHeader3Text"
+                                text="Input Value 2"
+                            />
+                        </Column>
+                        <Column
+                            id="columnHeader4"
+                            width="10rem"
+                        >
+                            <Text
+                                id="columnHeader4Text"
+                                text="Result"
+                            />
+                        </Column>
+                    </columns>
+                    <items>
+                        <ColumnListItem id="print1color1ListItem">
+                            <cells>
+                                <Text
+                                    id="columnValue1"
+                                    text="{operation}"
+                                />
+                                <Text
+                                    id="columnValue2"
+                                    text="{inputValue1}"
+                                />
+                                <Text
+                                    id="columnValue3"
+                                    text="{inputValue2}"
+                                />
+                                <Text
+                                    id="columnValue4"
+                                    text="{resultValue}"
+                                />
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+                </Table>
+            </HBox>
         </content>
     </Page>
 </mvc:View>

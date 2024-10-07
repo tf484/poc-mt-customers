@@ -1,0 +1,197 @@
+_schema-version: 3.3.0
+ID: poc-mt-sock
+version: 1.0.0
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+modules:
+  - name: poc-mt-sock-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+      disk-quota: 512M
+      memory: 256M
+      readiness-health-check-type: http
+      readiness-health-check-http-endpoint: /health
+    build-parameters:
+      builder: npm
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+
+    requires:
+      - name: poc-mt-sock-db
+      - name: poc-mt-sock-auth
+      - name: poc-mt-sock-destination
+      - name: poc-mt-sock-connectivity
+      - name: poc-mt-sock-logging
+
+  - name: poc-mt-sock-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: poc-mt-sock-db
+
+  - name: poc-mt-sock
+    type: approuter.nodejs
+    path: app/router
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api # must be used in xs-app.json as well
+          url: ~{srv-url}
+          forwardAuthToken: true
+      - name: poc-mt-sock-auth
+      - name: poc-mt-sock-html5-runtime
+      - name: poc-mt-sock-destination
+      - name: poc-mt-sock-connectivity
+      - name: poc-mt-sock-logging
+
+  - name: poc-mt-sock-app-content
+    type: com.sap.application.content
+    path: .
+    requires:
+      - name: poc-mt-sock-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - artifacts:
+            - math.zip
+          name: math
+          target-path: resources/
+
+  - name: math
+    type: html5
+    path: app/math
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm install
+        - npm run build:cf
+      supported-platforms:
+        []
+
+  - name: poc-mt-sock-app-destination-content
+    type: com.sap.application.content
+    requires:
+    - name: poc-mt-sock-destination
+      parameters:
+        content-target: true
+    - name: poc-mt-sock-repo-host
+      parameters:
+        service-key:
+          name: poc-mt-sock-repo-host-key
+    - name: poc-mt-sock-auth
+      parameters:
+        service-key:
+          name: poc-mt-sock-auth-key
+    parameters:
+      memory: 256M
+      disk-quota: 512M
+      content:
+        instance:
+          destinations:
+          - Name: poc-mt-sock_poc-mt-sock-repo-host
+            ServiceInstanceName: poc-mt-sock-repo-host
+            ServiceKeyName: poc-mt-sock-repo-host-key
+            sap.cloud.service: poc-mt-sock
+          - Authentication: OAuth2UserTokenExchange
+            Name: poc-mt-sock_poc-mt-sock-auth
+            ServiceInstanceName: poc-mt-sock-auth
+            ServiceKeyName: poc-mt-sock-auth-key
+            sap.cloud.service: poc-mt-sock
+          existing_destinations_policy: update
+    build-parameters:
+      no-source: true
+
+resources:
+  - name: poc-mt-sock-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+
+  - name: poc-mt-sock-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: poc-mt-sock-${org}-${space}
+        tenant-mode: dedicated
+
+  - name: poc-mt-sock-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+
+  - name: poc-mt-sock-html5-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service-plan: app-runtime
+      service: html5-apps-repo
+
+  - name: poc-mt-sock-destination
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: srv-api
+    parameters:
+      config:
+        xsappname: poc-mt-sock-destination
+        HTML5Runtime_enabled: true
+        init_data:
+          instance:
+            existing_destinations_policy: update
+            destinations:
+              - Authentication: NoAuthentication
+                Name: ui5
+                ProxyType: Internet
+                Type: HTTP
+                URL: https://ui5.sap.com
+              # - Name: poc-mt-sock-ws-api
+              #   Description: CAP Websocket Service
+              #   Authentication: NoAuthentication
+              #   ProxyType: Internet
+              #   Type: HTTP
+              #   URL: ~{srv-api/srv-url}
+              #   HTML5.DynamicDestination: true
+              #   HTML5.ForwardAuthToken: true
+              #   timeout: 600000
+        version: 1.0.0
+      service: destination
+      service-plan: lite
+
+  - name: poc-mt-sock-connectivity
+    type: org.cloudfoundry.managed-service
+    parameters:
+      config:
+        xsappname: poc-mt-sock-connectivity
+      service: connectivity
+      service-plan: lite
+
+  - name: poc-mt-sock-logging
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: application-logs
+      service-name: poc-mt-sock-${space}
+      service-plan: lite

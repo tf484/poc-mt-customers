@@ -6,24 +6,46 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@cap-js/hana": "^1",
+    "@sap-cloud-sdk/connectivity": "^3.21.0",
+    "@sap-cloud-sdk/http-client": "^3.21.0",
+    "@sap-cloud-sdk/resilience": "^3.21.0",
     "@sap/cds": "^8",
+    "@sap/xssec": "^4",
     "express": "^4",
-    "@sap/xssec": "^4"
+    "ws": "^8"
   },
   "devDependencies": {
-    "@cap-js/sqlite": "^1",
     "@cap-js/cds-types": "^0.6",
-    "@sap/ux-specification": "UI5-1.128"
+    "@cap-js/sqlite": "^1",
+    "@sap/cds-dk": "^8",
+    "@sap/ux-specification": "UI5-1.128",
+    "npm-run-all": "^4",
+    "rimraf": "^5.0.5"
   },
   "scripts": {
     "start": "cds-serve",
-    "watch-math": "cds watch --open math/webapp/index.html?sap-ui-xx-viewCache=false"
+    "watch-math": "cds watch --open math/webapp/index.html?sap-ui-xx-viewCache=false",
+    "undeploy": "cf undeploy poc-mt-sock --delete-services --delete-service-keys --delete-service-brokers",
+    "build": "rimraf resources mta_archives && mbt build --mtar archive",
+    "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
+    "build-deploy": "run-s build deploy",
+    "login-poc": "../../scripts/cf-aic-poc-login.sh",
+    "build-deploy-poc": "run-s login-poc build-deploy",
+    "login-dev": "../../scripts/cf-aic-dev-login.sh",
+    "build-deploy-dev": "run-s login-dev build-deploy",
+    "login-test": "../../scripts/cf-aic-test-login.sh",
+    "build-deploy-test": "run-s login-test build-deploy"
   },
   "cds": {
     "requires": {
       "[production]": {
-        "auth": "xsuaa"
+        "auth": "xsuaa",
+        "db": "hana"
       }
+    },
+    "sql": {
+      "native_hana_associations": false
     }
   }
 }

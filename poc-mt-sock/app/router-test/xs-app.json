@@ -1,0 +1,29 @@
+{
+  "welcomeFile": "math/",
+  "authenticationMethod": "none",
+  "websockets": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "source": "/ws(.*)$",
+      "target": "/ws$1",
+      "authenticationType": "none",
+      "destination": "srv-api",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/app/odata/(.*)$",
+      "target": "/odata/$1",
+      "authenticationType": "none",
+      "destination": "srv-api",
+      "csrfProtection": true
+    },
+    {
+      "source": "^/app/(.*)$",
+      "target": "$1",
+      "localDir": "../math/webapp",
+      "cacheControl": "no-cache, no-store, must-revalidate"
+    }
+  ]
+}
