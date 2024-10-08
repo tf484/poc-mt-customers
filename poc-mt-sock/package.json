@@ -11,6 +11,7 @@
     "@sap-cloud-sdk/http-client": "^3.21.0",
     "@sap-cloud-sdk/resilience": "^3.21.0",
     "@sap/cds": "^8",
+    "@sap/cds-mtxs": "^2",
     "@sap/xssec": "^4",
     "express": "^4",
     "ws": "^8"
@@ -41,11 +42,20 @@
     "requires": {
       "[production]": {
         "auth": "xsuaa",
-        "db": "hana"
+        "db": "hana",
+        "multitenancy": true
+      },
+      "[development]": {
+        "db": {
+          "credentials": {
+            "url": ":memory:"
+          }
+        }
       }
     },
     "sql": {
       "native_hana_associations": false
-    }
+    },
+    "profile": "with-mtx-sidecar"
   }
 }

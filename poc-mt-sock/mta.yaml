@@ -28,18 +28,10 @@ modules:
           srv-url: ${default-url}
 
     requires:
-      - name: poc-mt-sock-db
       - name: poc-mt-sock-auth
       - name: poc-mt-sock-destination
       - name: poc-mt-sock-connectivity
       - name: poc-mt-sock-logging
-
-  - name: poc-mt-sock-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    requires:
       - name: poc-mt-sock-db
 
   - name: poc-mt-sock
@@ -61,6 +53,18 @@ modules:
       - name: poc-mt-sock-destination
       - name: poc-mt-sock-connectivity
       - name: poc-mt-sock-logging
+      - name: mtx-api
+        group: destinations
+        properties:
+          name: mtx-api # must be used in xs-app.json as well
+          url: ~{mtx-url}
+    properties:
+      TENANT_HOST_PATTERN: "^(.*)-${default-uri}"
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
 
   - name: poc-mt-sock-app-content
     type: com.sap.application.content
@@ -92,42 +96,61 @@ modules:
   - name: poc-mt-sock-app-destination-content
     type: com.sap.application.content
     requires:
-    - name: poc-mt-sock-destination
-      parameters:
-        content-target: true
-    - name: poc-mt-sock-repo-host
-      parameters:
-        service-key:
-          name: poc-mt-sock-repo-host-key
-    - name: poc-mt-sock-auth
-      parameters:
-        service-key:
-          name: poc-mt-sock-auth-key
+      - name: poc-mt-sock-destination
+        parameters:
+          content-target: true
+      - name: poc-mt-sock-repo-host
+        parameters:
+          service-key:
+            name: poc-mt-sock-repo-host-key
+      - name: poc-mt-sock-auth
+        parameters:
+          service-key:
+            name: poc-mt-sock-auth-key
     parameters:
       memory: 256M
       disk-quota: 512M
       content:
         instance:
           destinations:
-          - Name: poc-mt-sock_poc-mt-sock-repo-host
-            ServiceInstanceName: poc-mt-sock-repo-host
-            ServiceKeyName: poc-mt-sock-repo-host-key
-            sap.cloud.service: poc-mt-sock
-          - Authentication: OAuth2UserTokenExchange
-            Name: poc-mt-sock_poc-mt-sock-auth
-            ServiceInstanceName: poc-mt-sock-auth
-            ServiceKeyName: poc-mt-sock-auth-key
-            sap.cloud.service: poc-mt-sock
+            - Name: poc-mt-sock_poc-mt-sock-repo-host
+              ServiceInstanceName: poc-mt-sock-repo-host
+              ServiceKeyName: poc-mt-sock-repo-host-key
+              sap.cloud.service: poc-mt-sock
+            - Authentication: OAuth2UserTokenExchange
+              Name: poc-mt-sock_poc-mt-sock-auth
+              ServiceInstanceName: poc-mt-sock-auth
+              ServiceKeyName: poc-mt-sock-auth-key
+              sap.cloud.service: poc-mt-sock
           existing_destinations_policy: update
     build-parameters:
       no-source: true
 
-resources:
-  - name: poc-mt-sock-db
-    type: com.sap.xs.hdi-container
+  - name: poc-mt-sock-mtx
+    type: nodejs
+    path: gen/mtx/sidecar
+    build-parameters:
+      builder: npm-ci
     parameters:
-      service: hana
-      service-plan: hdi-shared
+      memory: 256M
+      disk-quota: 512M
+    provides:
+      - name: mtx-api
+        properties:
+          mtx-url: ${default-url}
+    requires:
+      - name: poc-mt-sock-auth
+      - name: poc-mt-sock-registry
+      - name: poc-mt-sock-logging
+      - name: poc-mt-sock-html5-runtime
+      - name: poc-mt-sock-destination
+      - name: poc-mt-sock-connectivity
+      - name: app-api
+        properties:
+          SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
+      - name: poc-mt-sock-db
+
+resources:
 
   - name: poc-mt-sock-auth
     type: org.cloudfoundry.managed-service
@@ -137,7 +160,7 @@ resources:
       path: ./xs-security.json
       config:
         xsappname: poc-mt-sock-${org}-${space}
-        tenant-mode: dedicated
+        tenant-mode: shared
 
   - name: poc-mt-sock-repo-host
     type: org.cloudfoundry.managed-service
@@ -195,3 +218,29 @@ resources:
       service: application-logs
       service-name: poc-mt-sock-${space}
       service-plan: lite
+
+  - name: poc-mt-sock-registry
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: mtx-api
+    parameters:
+      service: saas-registry
+      service-plan: application
+      config:
+        xsappname: poc-mt-sock-${org}-${space}
+        appName: poc-mt-sock-${org}-${space}
+        displayName: Aicomp Math App
+        description: Aicomp MT Math App - Websockets
+        category: 'Applications / Multi-Customer Partner Solutions'
+        appUrls:
+          getDependencies: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/dependencies
+          onSubscription: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/tenant/{tenantId}
+          onSubscriptionAsync: true
+          onUnSubscriptionAsync: true
+          onUpdateDependenciesAsync: true
+          callbackTimeoutMillis: 300000 # Increase if your deployments are taking longer than that
+  - name: poc-mt-sock-db
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: service-manager
+      service-plan: container
