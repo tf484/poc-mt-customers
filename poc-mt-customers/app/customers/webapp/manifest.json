@@ -92,6 +92,11 @@
           "pattern": "Customers({key}):?query:",
           "name": "CustomersObjectPage",
           "target": "CustomersObjectPage"
+        },
+        {
+          "name": "Customers_relativesObjectPage",
+          "pattern": "Customers({key})/relatives({relativesKey}):?query:",
+          "target": "Customers_relativesObjectPage"
         }
       ],
       "targets": {
@@ -127,7 +132,35 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/Customers"
+              "contextPath": "/Customers",
+              "navigation": {
+                "relatives": {
+                  "detail": {
+                    "route": "Customers_relativesObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "texts/@com.sap.vocabularies.UI.v1.LineItem#Texts": {
+                  "tableSettings": {
+                    "creationMode": {
+                      "inlineCreationRowsHiddenInEditMode": true,
+                      "name": "InlineCreationRows"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Customers_relativesObjectPage": {
+          "type": "Component",
+          "id": "Customers_relativesObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "navigation": {},
+              "contextPath": "/Customers/relatives"
             }
           }
         }

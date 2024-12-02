@@ -12,6 +12,14 @@ annotate Description with @(title : '{i18n>Description}');
 
 entity Customers : cuid, managed {
     customerNumber: CustomerNumber;
-    Description: Description;
+    description: localized Description;
+    totalAmount : Decimal;
+    relatives : composition of many Relatives on relatives.customerID.ID = $self.ID
+}
+entity Relatives : cuid, managed {
+ customerID : Association to Customers; 
+ relation : String;
+//  description : localized Description;
+
 }
 
