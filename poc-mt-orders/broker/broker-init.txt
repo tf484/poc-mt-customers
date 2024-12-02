@@ -1,4 +1,0 @@
-Plaintext password:
-MFbPqjyK1nbKCc3IPH0XQrOJfxIDqIqN
-Hashed credentials:
-sha256:xE6yQ6HTH/w+Y8NsxvaJMSG+DtcZj92Br0AQR1dUkKM=:6UX3/v+6ki073ZiQhas2yniwm6gimfBKsphGMCpLUNg=
